@@ -1,0 +1,17 @@
+---
+applyTo: "**/pom.xml,**/mule-artifact.json"
+---
+
+# Build and version discipline
+
+- Resolve the relevant version evidence from this project's POM, parent POMs, properties, artifact descriptor, and CI/toolchain configuration. Report unresolved inheritance; do not guess the effective value.
+- Use the versions recorded in [the profile](../mule/team-profile.md): runtime patch/channel, `minMuleVersion`, DataWeave engine/language level, Maven version and actual JVM, MUnit version and runtime/JVM, compiler bytecode target, plugins, and connector/JDBC coordinates. If a value is missing, report the gap; do not edit the profile unless asked. A shell Java version or test-framework compatibility range does not establish Mule compatibility.
+- Preserve approved Mule runtime, Java, connector, Mule Maven Plugin, and MUnit versions unless an upgrade is requested. A tutorial or upstream skill's latest release is not an upgrade instruction.
+- When proposing a change, check the exact compatibility requirements for all affected components, using documentation for the project's versions. Runtime JVM support and bytecode targets differ (for example, before Mule 4.9.0 projects must compile for Java 8). Do not infer that every Java version accepted by the local JVM is supported by this Mule runtime. Supported Maven ranges are in each MUnit release's notes and change between releases. See [Mule Java support](https://docs.mulesoft.com/general/java-support).
+- Reuse existing dependency management, scopes/classifiers, repositories, and approved CI commands. Avoid duplicate direct dependencies and unrequested repository/plugin additions.
+- Identify Maven lifecycle and profile side effects before execution. A command containing `deploy`, an activation profile, an inherited plugin, or an Enterprise runtime download for MUnit may contact external services or need credentials; use the documented local verification workflow and required authorization.
+- If using MUnit test selection, follow the installed plugin's documented regex syntax and verify the selected test count. A successful Maven exit with zero selected tests is not evidence of coverage. Check actual plugin execution/binding, not only `pluginManagement`. See [MUnit Maven configuration](https://docs.mulesoft.com/munit/3.6/munit-maven-plugin) (3.6 example; use the project's version).
+- Deployment configuration must match the target recorded in the profile. MuleSoft Government Cloud supports CloudHub (1.0) and hybrid standalone runtimes, not CloudHub 2.0 or Runtime Fabric, so `cloudhub2Deployment` and Runtime Fabric examples from tutorials do not apply there; take URIs, environments and plugin settings from the project's existing configuration, not from examples.
+- Never put platform credentials, connected-app secrets or encryption keys on a command line, in a POM, or in committed scripts; use the project's approved mechanism (CI secret store or Maven `settings.xml` server entries kept out of the repository).
+- When editing `mule-artifact.json`, preserve `secureProperties`; on CloudHub it lists the application properties hidden in Runtime Manager. It does not encrypt values.
+- Keep build, unit-test, integration-test, packaging, and deployment claims separate. If Maven, dependencies, licenses, credentials, or network access block verification, report the precise check not run and the smallest next step.
