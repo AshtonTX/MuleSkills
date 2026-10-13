@@ -167,6 +167,13 @@ git add CLAUDE.md .claude .github/mule
 git commit -m "Add MuleSoft guardrails"
 ```
 
+After `--layout github`, the files are all under `.github`, so stage that instead:
+
+```sh
+git add .github
+git commit -m "Add MuleSoft guardrails"
+```
+
 Review the diff like any other change and merge it with the team's normal process.
 
 ## Day-to-day use

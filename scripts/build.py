@@ -39,6 +39,14 @@ LINK = re.compile(
     r"(?P<title>\s+(?:\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'|\([^()]*\)))?"
     r"(?P<close>\s*\))"
 )
+# A reference-style definition on its own line: [label]: destination "optional title".
+# Footnote definitions ([^note]: text) are not links and are left alone.
+REFERENCE = re.compile(
+    r"^(?P<open>[ ]{0,3}\[(?!\^)[^\]\n]+\]:[ \t]*)"
+    r"(?:<(?P<angle>[^<>\n]+)>|(?P<bare>\S+))"
+    r"(?P<close>[^\n]*)$",
+    re.M,
+)
 SCHEME = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
 
 
@@ -95,7 +103,11 @@ def rename_scope_key(text, old, new):
 
 
 def convert(text, source, target, mapping, exists):
-    """Recompute every relative link in `text` for the file's new location."""
+    """Recompute every relative link in `text` for the file's new location.
+
+    Covers inline links and reference-style definitions, so no relative
+    destination is copied into the other layout unconverted.
+    """
 
     def rewrite(match):
         destination = match.group("angle") or match.group("bare")
@@ -113,9 +125,10 @@ def convert(text, source, target, mapping, exists):
         moved = posixpath.relpath(str(mapping(resolved)), posixpath.dirname(str(target)) or ".")
         if path.endswith("/"):
             moved += "/"
-        return match.group("open") + moved + hash_mark + fragment + (match.group("title") or "") + match.group("close")
+        title = match.groupdict().get("title") or ""
+        return match.group("open") + moved + hash_mark + fragment + title + match.group("close")
 
-    return LINK.sub(rewrite, text)
+    return REFERENCE.sub(rewrite, LINK.sub(rewrite, text))
 
 
 def convert_tree(source_root, mapping, old_key, new_key, rules_dir):

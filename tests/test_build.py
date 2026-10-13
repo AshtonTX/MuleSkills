@@ -147,6 +147,44 @@ class BuildTests(unittest.TestCase):
         self.assertIn('[Docs](https://example.invalid/a "External")\n', generated)
         self.assert_current()
 
+    def test_reference_style_definitions_are_converted(self):
+        rules = self.shared / "CLAUDE.md"
+        rules.write_text(
+            rules.read_text(encoding="utf-8")
+            + "See [the profile][profile], [the rules][dw] and [the docs][docs].[^note]\n\n"
+            + "[profile]: .github/mule/team-profile.md\n"
+            + '  [dw]: .claude/rules/dataweave.md#correctness "DataWeave rules"\n'
+            + "[docs]: https://example.invalid/a\n"
+            + "[^note]: A footnote, not a link.\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(self.build().returncode, 0)
+        generated = (self.github / ".github/copilot-instructions.md").read_text(encoding="utf-8")
+        self.assertIn("\n[profile]: mule/team-profile.md\n", generated)
+        self.assertIn('\n  [dw]: instructions/dataweave.instructions.md#correctness "DataWeave rules"\n', generated)
+        self.assertIn("\n[docs]: https://example.invalid/a\n", generated)
+        self.assertIn("\n[^note]: A footnote, not a link.\n", generated)
+        self.assertIn("See [the profile][profile], [the rules][dw] and [the docs][docs].[^note]\n", generated)
+        self.assert_current()
+
+    def test_reference_style_definitions_that_cannot_be_converted_are_rejected(self):
+        before = {p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}
+        rules = self.shared / "CLAUDE.md"
+        original = rules.read_text(encoding="utf-8")
+        cases = {
+            "[profile]: <.github/mule/team-profile.md>": "cannot convert link",
+            "[profile]: .github/mule/team%2Dprofile.md": "cannot convert link",
+            "[profile]: .github/mule/missing.md": "does not point inside the layout",
+            "[profile]: ../outside.md": "does not point inside the layout",
+        }
+        for definition, message in cases.items():
+            with self.subTest(definition=definition):
+                rules.write_text(original + "[Profile][profile]\n\n" + definition + "\n", encoding="utf-8")
+                result = self.build()
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(message, result.stdout)
+                self.assertEqual({p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}, before)
+
     def test_link_forms_that_cannot_be_converted_are_rejected(self):
         # Copying one of these unchanged would leave a link that points nowhere, or somewhere else.
         before = {p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}
