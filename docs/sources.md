@@ -171,7 +171,7 @@ Copilot CLI 1.0.96 and the GitHub Copilot desktop app on macOS, using scratch pr
 
 ### What changed
 
-- Both large files were split. Every bullet was moved verbatim; none was reworded. `dataweave.instructions.md` is now 16,168 bytes and `mule-xml.instructions.md` 14,608. The situational parts are in five files under `overlay/.github/skills/team-mule-guardrails/references/`: operator and function behavior, output formats, performance, connector and scope rules, and deployment target rules. Each rule file states when to read each reference.
+- Both large files were split. Every bullet was moved verbatim; none was reworded. `dataweave.instructions.md` is now about 16.2 KB and `mule-xml.instructions.md` about 14.7 KB. The situational parts are in five files under `overlay/.github/skills/team-mule-guardrails/references/`: operator and function behavior, output formats, performance, connector and scope rules, and deployment target rules. Each rule file states when to read each reference.
 - The one edited bullet is the Mule XML pointer to the DataWeave guidance, which moved to the top of that file as its own paragraph.
 - Each instruction file has a `description`, which Copilot shows to the model beside the file's patterns.
 - `scripts/check.py` rejects any overlay Markdown file above 18,000 bytes, leaving a margin below the measured limit.
