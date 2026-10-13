@@ -29,9 +29,16 @@ ROOT = Path(__file__).resolve().parent.parent
 SHARED = ROOT / "overlay/shared"
 GITHUB = ROOT / "overlay/github"
 
-# A plain inline link: [text](destination). Overlay files use nothing fancier,
-# and convert() refuses a relative destination it cannot read with certainty.
-LINK = re.compile(r"(\[[^\]\n]*\]\()([^()\s]+)(\))")
+# Every inline link form scripts/check.py recognizes: a bare or <angle-bracketed>
+# destination, optionally followed by a title. convert() rewrites the bare form,
+# with or without a title, and refuses a relative destination in any other form,
+# so no link is ever copied into the other layout unconverted.
+LINK = re.compile(
+    r"(?P<open>\[[^\]\n]*\]\()"
+    r"(?:<(?P<angle>[^<>\n]+)>|(?P<bare>(?:\\.|[^\s()\\]|\([^()\n]*\))+))"
+    r"(?P<title>\s+(?:\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'|\([^()]*\)))?"
+    r"(?P<close>\s*\))"
+)
 SCHEME = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
 
 
@@ -91,19 +98,22 @@ def convert(text, source, target, mapping, exists):
     """Recompute every relative link in `text` for the file's new location."""
 
     def rewrite(match):
-        destination = match.group(2)
+        destination = match.group("angle") or match.group("bare")
         if SCHEME.match(destination) or destination.startswith("#"):
             return match.group(0)
         path, hash_mark, fragment = destination.partition("#")
-        if not path or "\\" in path or "%" in path or "?" in path:
-            raise ValueError(f"{source}: cannot convert link {destination}")
+        if match.group("angle") or not path or re.search(r"[\\%?()]", path):
+            raise ValueError(
+                f"{source}: cannot convert link {destination}; write it as a plain relative path, "
+                "without angle brackets, escapes, parentheses or a query"
+            )
         resolved = posixpath.normpath(posixpath.join(posixpath.dirname(str(source)), path))
         if resolved.startswith("..") or not exists(resolved):
             raise ValueError(f"{source}: link {destination} does not point inside the layout")
         moved = posixpath.relpath(str(mapping(resolved)), posixpath.dirname(str(target)) or ".")
         if path.endswith("/"):
             moved += "/"
-        return match.group(1) + moved + hash_mark + fragment + match.group(3)
+        return match.group("open") + moved + hash_mark + fragment + (match.group("title") or "") + match.group("close")
 
     return LINK.sub(rewrite, text)
 

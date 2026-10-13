@@ -129,6 +129,46 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("no place for this path in the GitHub layout", result.stdout)
 
+    def test_titled_links_are_converted(self):
+        rules = self.shared / "CLAUDE.md"
+        rules.write_text(
+            rules.read_text(encoding="utf-8")
+            + '[Profile](.github/mule/team-profile.md "Project facts")\n'
+            + "[Rules](.claude/rules/dataweave.md#correctness 'DataWeave')\n"
+            + "[Recipes](.github/mule/task-recipes.md (Prompts))\n"
+            + '[Docs](https://example.invalid/a "External")\n',
+            encoding="utf-8",
+        )
+        self.assertEqual(self.build().returncode, 0)
+        generated = (self.github / ".github/copilot-instructions.md").read_text(encoding="utf-8")
+        self.assertIn('[Profile](mule/team-profile.md "Project facts")\n', generated)
+        self.assertIn("[Rules](instructions/dataweave.instructions.md#correctness 'DataWeave')\n", generated)
+        self.assertIn("[Recipes](mule/task-recipes.md (Prompts))\n", generated)
+        self.assertIn('[Docs](https://example.invalid/a "External")\n', generated)
+        self.assert_current()
+
+    def test_link_forms_that_cannot_be_converted_are_rejected(self):
+        # Copying one of these unchanged would leave a link that points nowhere, or somewhere else.
+        before = {p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}
+        rules = self.shared / "CLAUDE.md"
+        original = rules.read_text(encoding="utf-8")
+        (self.shared / ".github/mule/notes(v2).md").write_text("Notes\n", encoding="utf-8")
+        links = (
+            '[Profile](<.github/mule/team-profile.md> "Project facts")',
+            "[Profile](<.github/mule/team-profile.md>)",
+            "[Notes](.github/mule/notes(v2).md)",
+            "[Notes](.github/mule/notes\\(v2\\).md)",
+            "[Profile](.github/mule/team%2Dprofile.md)",
+            "[Profile](.github/mule/team-profile.md?plain=1)",
+        )
+        for link in links:
+            with self.subTest(link=link):
+                rules.write_text(original + link + "\n", encoding="utf-8")
+                result = self.build()
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn("cannot convert link", result.stdout)
+                self.assertEqual({p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}, before)
+
     def test_unknown_argument_is_rejected(self):
         self.assertEqual(self.build("--write").returncode, 2)
 
