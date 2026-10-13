@@ -7,7 +7,7 @@ description: "DataWeave rules. Read before reading or changing any DataWeave: a 
 
 Follow the project's existing DataWeave conventions first. Use documentation for the project's DataWeave version; links below are 2.9 (Mule 4.9) examples. Items marked (documented) are stated in MuleSoft documentation. Items marked (CLI) were observed by running the DataWeave CLI (runtime 2.12.2, at its default and at language levels 2.4–2.9), not taken from documentation; confirm them on the project's runtime when they decide the outcome.
 
-Three reference files hold situational detail. Read the one that applies before writing that code:
+Three reference files hold situational detail. Read the one that applies before writing that code. If you cannot open files yourself, say which of them the change needs and ask for it to be attached before writing that code.
 
 - [Operator and function behavior](../skills/team-mule-guardrails/references/dataweave-operators.md): before using `-` or `--`, range selectors, `take`/`drop`/`slice`, `update`, `mask` or the `dw::util::Tree` helpers, or `isBlank`/`trim`/`upper`, or writing a recursive function.
 - [Output formats](../skills/team-mule-guardrails/references/dataweave-output-formats.md): before changing an `output` directive or its writer properties, or writing CSV or XML.

@@ -171,7 +171,7 @@ Copilot CLI 1.0.96 and the GitHub Copilot desktop app on macOS, using scratch pr
 
 ### What changed
 
-- Both large files were split. Every bullet was moved verbatim; none was reworded. `dataweave.instructions.md` is now 16,042 bytes and `mule-xml.instructions.md` 14,481. The situational parts are in five files under `overlay/.github/skills/team-mule-guardrails/references/`: operator and function behavior, output formats, performance, connector and scope rules, and deployment target rules. Each rule file states when to read each reference.
+- Both large files were split. Every bullet was moved verbatim; none was reworded. `dataweave.instructions.md` is now 16,168 bytes and `mule-xml.instructions.md` 14,608. The situational parts are in five files under `overlay/.github/skills/team-mule-guardrails/references/`: operator and function behavior, output formats, performance, connector and scope rules, and deployment target rules. Each rule file states when to read each reference.
 - The one edited bullet is the Mule XML pointer to the DataWeave guidance, which moved to the top of that file as its own paragraph.
 - Each instruction file has a `description`, which Copilot shows to the model beside the file's patterns.
 - `scripts/check.py` rejects any overlay Markdown file above 18,000 bytes, leaving a margin below the measured limit.
@@ -189,7 +189,7 @@ The fixture command now reports **72 passed, 0 failed** (twelve fixtures at six 
 
 ### Not established
 
-Windows, other models, and Copilot clients other than the CLI and desktop app were not tested. Claude Code does not read `.github/` instruction files at all; serving it needs a separate layout decision and is not part of this change.
+Windows, other models, and Copilot clients other than the CLI and desktop app were not tested. The split relies on the client being able to open a linked file. VS Code adds linked instruction files to a chat only when `chat.includeReferencedInstructions` is on, and it is off by default ([VS Code AI settings](https://code.visualstudio.com/docs/agents/reference/ai-settings), retrieved 13 October 2026); its agent mode can still open them with tools. In clients where files are attached by hand, the reference files have to be attached as well; the README says so, and each rule file tells the model to ask for a reference it cannot open. Claude Code does not read `.github/` instruction files at all; serving it needs a separate layout decision and is not part of this change.
 
 ## Government Cloud and individual remote capabilities
 

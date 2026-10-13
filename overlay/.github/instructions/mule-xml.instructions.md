@@ -9,7 +9,7 @@ Follow the project's existing structure and conventions first. Links below are M
 
 Flow files embed DataWeave in Transform Message scripts and `#[...]` expressions. Before reading or changing any of it, also read [the DataWeave rules](dataweave.instructions.md).
 
-Two reference files hold situational rules. Read the one that applies before making that change:
+Two reference files hold situational rules. Read the one that applies before making that change. If you cannot open files yourself, say which of them the change needs and ask for it to be attached before making that change.
 
 - [Connector and scope rules](../skills/team-mule-guardrails/references/mule-connectors.md): when the flow uses SFTP, Anypoint MQ, Batch, Salesforce, VM queues or the Cache scope.
 - [Deployment target rules](../skills/team-mule-guardrails/references/mule-deployment-targets.md): before changing HTTP listener hosts or ports, state kept between requests, object store use, clustered or multi-worker sources, API autodiscovery or domain configuration.
