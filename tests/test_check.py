@@ -65,7 +65,9 @@ class CheckerTests(unittest.TestCase):
                 self.assert_invalid("applyTo must set nonempty glob patterns")
 
     def test_supported_quotes_comments_and_crlf_are_valid(self):
-        self.instruction.write_bytes(b"---\r\n# Comment\r\n\r\napplyTo: '**/*.dwl' # Files\r\n---\r\n")
+        self.instruction.write_bytes(
+            b"---\r\n# Comment\r\n\r\napplyTo: '**/*.dwl' # Files\r\ndescription: 'DataWeave rules.'\r\n---\r\n"
+        )
         self.skill.write_text(
             "---\nname: 'team-mule-guardrails'\n"
             "description: 'Use the team''s rules: inspect Mule changes.' # Comment\n---\n",
@@ -95,7 +97,33 @@ class CheckerTests(unittest.TestCase):
         nested.write_text("# Missing metadata\n", encoding="utf-8")
         self.assert_invalid("nested/additional.instructions.md: front matter")
         nested.write_text('---\napplyTo: "**/*.dwl"\n---\n', encoding="utf-8")
+        self.assert_invalid("nested/additional.instructions.md: description is required")
+        nested.write_text('---\napplyTo: "**/*.dwl"\ndescription: "Extra rules."\n---\n', encoding="utf-8")
         self.assert_valid()
+
+    def test_overlay_file_too_large_for_one_read_is_rejected(self):
+        limit = 18_000
+        head = '---\napplyTo: "**/*.dwl"\ndescription: "DataWeave rules."\n---\n'
+        self.instruction.write_text(head + "x" * (limit - len(head)), encoding="utf-8")
+        self.assert_valid()
+        self.instruction.write_text(head + "x" * (limit - len(head) + 1), encoding="utf-8")
+        self.assert_invalid(f"{limit + 1} bytes exceeds {limit}")
+        reference = self.skill.parent / "references/dataweave-performance.md"
+        self.instruction.write_text(head, encoding="utf-8")
+        reference.write_text("x" * (limit + 1), encoding="utf-8")
+        self.assert_invalid("references/dataweave-performance.md")
+
+    def test_instruction_description_is_required(self):
+        self.instruction.write_text('---\napplyTo: "**/*.dwl"\ndescription: "DataWeave rules."\n---\n', encoding="utf-8")
+        self.assert_valid()
+        for front_matter in ('applyTo: "**/*.dwl"', 'applyTo: "**/*.dwl"\ndescription: " "'):
+            with self.subTest(front_matter=front_matter):
+                self.instruction.write_text(f"---\n{front_matter}\n---\n", encoding="utf-8")
+                self.assert_invalid("dataweave.instructions.md: description is required")
+
+    def test_missing_reference_file_is_reported(self):
+        (self.skill.parent / "references/mule-connectors.md").unlink()
+        self.assert_invalid("missing overlay file:")
 
     def test_missing_required_file_is_reported(self):
         self.instruction.unlink()

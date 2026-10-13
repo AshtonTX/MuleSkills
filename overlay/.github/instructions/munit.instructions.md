@@ -1,10 +1,13 @@
 ---
 applyTo: "**/src/test/munit/**/*.xml,**/src/test/resources/**"
+description: "MUnit test rules: assertions that can fail, mocks and spies, error tests and test data."
 ---
 
 # MUnit changes
 
 Follow the project's existing suite conventions first; these rules fill gaps and prevent false passes. Consult the documentation for the project's MUnit version; links below are MUnit 3.6 examples, and 3.7 changes assertion-error behavior.
+
+Suites embed DataWeave in expressions and event payloads. Before reading or changing any of it, also read [the DataWeave rules](dataweave.instructions.md). If you cannot open files yourself, ask for that file to be attached first.
 
 ## Correctness
 
