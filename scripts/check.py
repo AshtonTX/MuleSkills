@@ -3,7 +3,7 @@
 
 Checks:
   - every scoped instruction file starts with front matter that sets `applyTo`
-    and, when it has a `description`, a nonempty one
+    and a `description`, which Copilot shows the model beside the patterns
   - the skill's front matter has a `name` matching its folder and a `description`
   - inline relative Markdown links, with optional titles, point to existing paths
   - links inside overlay/ stay inside overlay/, so the files still work after
@@ -126,8 +126,8 @@ def main():
         patterns = fields.get("applyTo", "").split(",")
         if any(not pattern.strip() for pattern in patterns):
             errors.append(f"{path.relative_to(ROOT)}: applyTo must set nonempty glob patterns")
-        if "description" in fields and not fields["description"].strip():
-            errors.append(f"{path.relative_to(ROOT)}: description must not be empty when present")
+        if not fields.get("description", "").strip():
+            errors.append(f"{path.relative_to(ROOT)}: description is required")
 
     for skill in sorted((OVERLAY / ".github/skills").glob("*/SKILL.md")):
         try:
