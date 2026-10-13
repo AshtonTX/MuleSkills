@@ -10,7 +10,7 @@ Follow the project's existing DataWeave conventions first. Use documentation for
 Three reference files hold situational detail. Read the one that applies before writing that code. If you cannot open files yourself, say which of them the change needs and ask for it to be attached before writing that code.
 
 - [Operator and function behavior](../skills/team-mule-guardrails/references/dataweave-operators.md): before using `-` or `--`, range selectors, `take`/`drop`/`slice`, `update`, `mask` or the `dw::util::Tree` helpers, or `isBlank`/`trim`/`upper`, or writing a recursive function.
-- [Output formats](../skills/team-mule-guardrails/references/dataweave-output-formats.md): before changing an `output` directive or its writer properties, or writing CSV or XML.
+- [Output formats](../skills/team-mule-guardrails/references/dataweave-output-formats.md): before changing an `output` directive or its writer properties, or writing CSV or XML. The JSON rules are below.
 - [Performance and large payloads](../skills/team-mule-guardrails/references/dataweave-performance.md): before optimizing a script, reading large inputs, or changing lookups or streaming.
 
 ## DataWeave inside Mule XML
@@ -63,6 +63,10 @@ Most scripts in a Mule project sit in the flow file, in a Transform Message or a
 - Object keys are DataWeave `Key` values with a local name, namespace and attributes. Use `key as String` when intentionally comparing only the local name; a key is not equal to a String under `==` (CLI). See [Object type](https://docs.mulesoft.com/dataweave/2.9/dataweave-types#dw_type_object). Indexing an object with a Number selects by position: after `groupBy $.id`, `grouped[201]` returned `null` and `grouped[1]` returned the second group, not key `"1"` (CLI). Convert numeric lookup IDs with `as String`, and wrap computed keys in parentheses (`obj[("k" ++ id)]`).
 - `join`, `leftJoin` and `outerJoin` from `dw::core::Arrays` return `{l, r}` pairs in the left list's order, one per match, so a left item with two matches appears twice. An unmatched item has no `r` (or `l`) key at all, so test with `pair.r?`. Keys are compared as strings: numeric `1` matched string `"1"` (CLI).
 - `orderBy` keeps ties in input order and compares strings by code point (`"A"`, `"B"`, `"a"`, `"b"`; `"10"` before `"9"`). It failed on `null` sort keys. At language levels 2.4–2.9 it coerced mixed strings and numbers with only a warning (`[5, 1, "10"]` gave `[1, "10", 5]`), while the native CLI's default level rejected them (CLI). This does not establish every later Mule engine's behavior; see `com.mulesoft.dw.stableOrderBy` in the version's [system properties](https://docs.mulesoft.com/dataweave/2.9/dataweave-system-properties). Convert sort keys to one type and handle nulls first.
+
+### JSON output
+
+- Preserve null versus omitted fields; `skipNullOn` changes the output contract and can change array positions (`[1, null, 3]` becomes `[1, 3]`). Duplicate keys, for example from repeated XML elements, are written as repeated JSON keys; `duplicateKeyAsArray=true` collects them into one array when the contract wants that shape. See [JSON writer options](https://docs.mulesoft.com/dataweave/2.9/dataweave-formats-json).
 
 ## Performance
 

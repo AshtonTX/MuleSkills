@@ -24,7 +24,7 @@ overlay/.github/                     <- copied into each Mule project
     SKILL.md                         step-by-step workflow Copilot can choose for MuleSoft tasks
     references/                      situational detail the rule files point to, opened on demand
       dataweave-operators.md         operator and function edge cases
-      dataweave-output-formats.md    JSON, CSV and XML writer behavior
+      dataweave-output-formats.md    CSV and XML writer behavior
       dataweave-performance.md       performance, streaming and large payloads
       mule-connectors.md             SFTP, Anypoint MQ, Batch, Salesforce, VM queues, Cache scope
       mule-deployment-targets.md     CloudHub 1.0, clusters, API Manager, domains
