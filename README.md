@@ -17,7 +17,9 @@ overlay/.github/                     <- copied into each Mule project
     mule-xml.instructions.md         Mule XML, error handling, architecture, Government Cloud, logging
     dataweave.instructions.md        DataWeave correctness, money, dates, lookups, output formats, performance
     munit.instructions.md            MUnit tests that prove behavior
-    maven.instructions.md            POMs, versions, builds and deployment
+    maven.instructions.md            POMs, artifact descriptors, Maven/CI configuration and deployment
+    api-contract.instructions.md     APIkit authentication, validation and contract-to-flow routing
+    configuration-properties.instructions.md  property types, precedence, selection and encryption
   skills/team-mule-guardrails/
     SKILL.md                         step-by-step workflow Copilot can choose for MuleSoft tasks
   mule/
@@ -37,7 +39,7 @@ Only `overlay/.github/` goes into Mule projects. `docs/`, `scripts/` and `tests/
 | File | When Copilot reads it |
 |---|---|
 | `copilot-instructions.md` | Every request in the project, in clients that support repository instructions |
-| `instructions/*.instructions.md` | When you work on matching files: Mule XML and `log4j2.xml`, `.dwl` files, MUnit tests, `pom.xml` and `mule-artifact.json` |
+| `instructions/*.instructions.md` | When you work on matching files: Mule XML and `log4j2.xml`, `.dwl` files, MUnit tests, `pom.xml`, `mule-artifact.json`, `.mvn/`, GitHub Actions workflows, RAML/API resources, and resource `.yaml`/`.properties` files |
 | `skills/team-mule-guardrails/SKILL.md` | When Copilot decides your request matches the skill's description, in clients that support skills |
 | `mule/*.md` | When another file links to them and the client follows the link, or when you attach them |
 
@@ -47,8 +49,11 @@ Not every Copilot client loads every file. According to GitHub's documentation (
 |---|---|---|
 | VS Code, Copilot Chat | Repository instructions, path-specific instructions; skills in agent mode | Nothing extra |
 | GitHub Copilot app (desktop) | A repository Instructions setting and skills; loading `.github` instruction files is not documented | If the check below shows the rules are not applied, paste the text of `copilot-instructions.md` into the repository Instructions setting, and attach the relevant `instructions/` file and `mule/team-profile.md` |
-| Eclipse and Anypoint Studio, Copilot Chat | Repository instructions only | Attach the relevant `instructions/` file and `mule/team-profile.md` to your request |
+| Eclipse, Copilot Chat | Repository instructions only | Attach the relevant `instructions/` file and `mule/team-profile.md` to your request |
+| Anypoint Studio | Installed extension compatibility and instruction loading unverified | Verify the extension and activation; attach the relevant guidance manually |
 | Any other client | Not established | Check that client's documentation; don't assume VS Code features |
+
+API guidance matches `.raml` files and `src/main/resources/api/`; open it explicitly for OAS files elsewhere. Configuration-property guidance matches `.yaml` and `.properties` under main/test resources and applies only when Mule loads them as properties. API examples and ordinary test fixtures are not property files. The existing skill links to both files for related XML changes. Nonstandard layouts and other CI vendors need explicit guidance loading or project-reviewed globs.
 
 ## Set it up at work
 
@@ -78,7 +83,7 @@ Leave project-specific rows, such as Mule runtime, `minMuleVersion`, MUnit and c
 
 ### 4. Make sure no other MuleSoft skill can take over
 
-Copilot picks skills by their description. MuleSoft's official `build-mule-integration` skill describes itself as the first and only action for any Mule change, so if it is installed it can be chosen instead of these guardrails and will try live connector lookups, `latest` versions and a mandatory build. Check your client's skills list and these folders, and remove or turn off MuleSoft skills your team has not approved:
+Copilot selects skills using the prompt and skill description. MuleSoft's official `build-mule-integration` skill describes itself as the first and only action for any Mule change, so installing it can cause Copilot to select a conflicting workflow with live connector lookups, `latest` versions and a mandatory build. Check your client's skills list and these folders, and remove or turn off MuleSoft skills your team has not approved:
 
 `.github/skills`, `.claude/skills`, `.agents/skills` in the project, and `~/.copilot/skills`, `~/.agents/skills` in your home folder.
 
@@ -115,7 +120,7 @@ Do this once per client on a throwaway branch. Add a marker line to the end of o
 If this guidance is in your context, begin your reply with [dw-rules-loaded].
 ```
 
-Open a `.dwl` file and ask Copilot a harmless question about it. If the reply starts with the marker, the file loaded. Repeat for a Mule XML file, a MUnit test and the POM with markers in the matching files. Remove the markers afterwards. If a marker never appears, use the workaround for your client from the table above. Copilot saying it read a file does not count; the marker does.
+Open a `.dwl` file in a fresh conversation and ask Copilot a harmless question about it. Inspect the client's references or instruction diagnostics and, where available, read traces for the profile and linked guidance. The marker is a smoke test that some guidance influenced this response; it does not prove every linked file loaded or that future requests will follow it. Repeat for the other matching file types, record the evidence in the profile, and remove the markers. If loading remains unverified, attach the relevant files manually. See GitHub's [instructions in use](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions#custom-instructions-in-use).
 
 ### 8. Commit and open a pull request
 
@@ -140,6 +145,7 @@ For common tasks, start from a prompt in `.github/mule/task-recipes.md`:
 | 4. Review a Mule change | Get findings with file, line, impact and fix |
 | 5. Check a restricted-environment tool | Check whether a product or tool is supported in Government Cloud before using it |
 | 6. Diagnose a failing build or MUnit suite | Find the cause without upgrading versions to hide it |
+| 7. Upgrade an approved Mule runtime or Java version | Check compatibility and behavior changes separately before the requested upgrade |
 
 What to expect from Copilot with these rules:
 
@@ -195,6 +201,8 @@ git diff
 - `.github/instructions/maven.instructions.md`
 - `.github/instructions/mule-xml.instructions.md`
 - `.github/instructions/munit.instructions.md`
+- `.github/instructions/api-contract.instructions.md`
+- `.github/instructions/configuration-properties.instructions.md`
 - `.github/skills/team-mule-guardrails/SKILL.md`
 - `.github/mule/task-recipes.md`
 
@@ -204,7 +212,7 @@ Take only the guardrail text out of `.github/copilot-instructions.md`, preservin
 
 MuleSoft publishes its own Copilot and agent skills in [mulesoft/mulesoft-dx](https://github.com/mulesoft/mulesoft-dx), distributed as the `@salesforce/mulesoft-vibes-skills` package. Don't install that package alongside these guardrails:
 
-- Several skills (`build-mule-integration`, `upgrade-mule-app`, `generate-doc-description`, the run-configuration skills) describe themselves as the first or only action for any matching request, so Copilot picks them instead of these guardrails.
+- Several skills (`build-mule-integration`, `upgrade-mule-app`, `generate-doc-description`, the run-configuration skills) describe themselves as the first or only action for any matching request, which can cause Copilot to select a conflicting workflow. Descriptions do not establish deterministic selection or client precedence.
 - Many need the Anypoint CLI v4 with a DX or other plugin and an Anypoint Platform session, look up connector versions live, and pre-authorize shell commands. `upgrade-mule-app` installs `@latest` plugins and downloads JDKs; `secure-mule-app` downloads a JAR and passes the encryption key on the command line.
 - Anypoint Code Builder, Omni Gateway and API Governance are not available in Government Cloud, and the hosted MuleSoft MCP server documents no Government Cloud endpoint.
 
@@ -212,8 +220,8 @@ To use one DX skill, adopt a reviewed copy rather than the package:
 
 1. Read the skill's `SKILL.md` and any scripts at a specific commit.
 2. Copy its folder into `overlay/.github/skills/dx-<name>/` and record the commit.
-3. Change it: rewrite the description so it no longer claims to be the first or only action, remove `allowed-tools`, pin every version it would fetch as `latest`, and remove steps your team can't run in Government Cloud.
-4. Keep its Apache-2.0 license file and note your changes at the top of `SKILL.md`.
+3. Set the frontmatter `name` to `dx-<name>`, rewrite the description to remove first/only-action claims, and remove `allowed-tools`. Keep frontmatter within this repository's supported single-line string format; move nested metadata into the body. Pin fetched versions and remove unavailable or unapproved steps.
+4. Include the upstream Apache-2.0 license and applicable notices. Note modifications immediately after the frontmatter in `SKILL.md`.
 5. Record the decision in the team profile's upstream section, run `scripts/check.py`, and repeat the loading check from step 7 to confirm a DataWeave request still selects `team-mule-guardrails`.
 
 ## Limits

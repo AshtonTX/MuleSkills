@@ -1,0 +1,13 @@
+{
+  "keyComparison": {
+    "isString": false,
+    "directMatch": false,
+    "localNameMatch": true
+  },
+  "masked": {
+    "scalar": {"password": "*****"},
+    "nested": {"user": {"password": "*****"}},
+    "objectValue": {"password": {"value": "synthetic"}},
+    "arrayValue": {"password": ["synthetic"]}
+  }
+}
