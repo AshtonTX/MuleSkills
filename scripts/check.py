@@ -33,7 +33,7 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parent.parent
 OVERLAY = ROOT / "overlay"
 LINK = re.compile(
-    r"\[[^\]\n]*\]\("
+    r"\[(?:[^\[\]\n]|\[[^\[\]\n]*\])*\]\("
     r"(?:<(?P<angle>[^<>\n]+)>|(?P<bare>(?:\\.|[^\s()\\]|\([^()\n]*\))+))"
     r"(?:\s+(?:\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'|\([^()]*\)))?"
     r"\s*\)"

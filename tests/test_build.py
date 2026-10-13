@@ -195,7 +195,11 @@ class BuildTests(unittest.TestCase):
             '<a href=".github/mule/team-profile.md">Profile</a>': "cannot convert HTML link",
             "<img src='.github/mule/diagram.png'>": "cannot convert HTML link",
             "Open the files in `.claude/rules/` by hand.": "would still mention .claude/",
-            "This file is installed as CLAUDE.md at the project root.": "would still mention CLAUDE.md",
+            "This file is installed as CLAUDE.md at the project root.": "is not written as a link",
+            "<a href=.github/mule/team-profile.md>Profile</a>": "cannot convert HTML link",
+            "See .github/mule/team-profile.md for the project's facts.": "is not written as a link",
+            "The profile is `./.github/mule/team-profile.md`.": "is not written as a link",
+            "[a [b [c] d] e](.github/mule/team-profile.md)": "is not written as a link",
         }
         for line, message in cases.items():
             with self.subTest(line=line):
@@ -206,6 +210,79 @@ class BuildTests(unittest.TestCase):
                 self.assertEqual({p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}, before)
         rules.write_text(original + '<a href="https://example.invalid/">External</a> <a href="#top">Top</a>\n', encoding="utf-8")
         self.assertEqual(self.build().returncode, 0)
+
+    def test_link_label_with_nested_brackets_is_converted(self):
+        rules = self.shared / "CLAUDE.md"
+        rules.write_text(
+            rules.read_text(encoding="utf-8") + "[the [project] profile](.github/mule/team-profile.md)\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(self.build().returncode, 0)
+        generated = (self.github / ".github/copilot-instructions.md").read_text(encoding="utf-8")
+        self.assertIn("[the [project] profile](mule/team-profile.md)\n", generated)
+
+    def test_path_text_that_stays_correct_in_both_layouts_is_allowed(self):
+        # A sibling that keeps its name, and a path that is not relative to this file, need no conversion.
+        recipes = self.shared / ".github/mule/task-recipes.md"
+        recipes.write_text(recipes.read_text(encoding="utf-8") + "Fill in team-profile.md first.\n", encoding="utf-8")
+        rule = self.shared / ".claude/rules/maven.md"
+        rule.write_text(
+            rule.read_text(encoding="utf-8") + "- Record the result in `.github/mule/team-profile.md` at the project root.\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(self.build().returncode, 0)
+        self.assert_current()
+        rule.write_text(rule.read_text(encoding="utf-8") + "- See dataweave.md for scripts.\n", encoding="utf-8")
+        result = self.build()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("dataweave.md is not written as a link", result.stdout)
+
+    def test_symbolic_links_are_refused_before_anything_is_written(self):
+        outside = self.root / "outside"
+        outside.mkdir()
+        victim = outside / "victim.md"
+        generated = self.github / ".github/instructions/maven.instructions.md"
+        folder = self.github / ".github/skills"
+        source_folder = self.shared / ".claude/skills"
+
+        def link_output_file():
+            generated.unlink()
+            generated.symlink_to(victim)
+
+        def link_output_folder():
+            shutil.rmtree(folder)
+            folder.symlink_to(outside, target_is_directory=True)
+
+        def link_output_root():
+            shutil.rmtree(self.github)
+            self.github.symlink_to(outside, target_is_directory=True)
+
+        def link_source_folder():
+            shutil.move(str(source_folder), str(outside / "skills"))
+            source_folder.symlink_to(outside / "skills", target_is_directory=True)
+
+        for name, make_link in (("output file", link_output_file), ("output folder", link_output_folder),
+                                ("output root", link_output_root), ("source folder", link_source_folder)):
+            with self.subTest(case=name):
+                # rmtree removes a link itself and never what it points to.
+                shutil.rmtree(self.root / "overlay")
+                shutil.rmtree(outside)
+                outside.mkdir()
+                victim.write_text("Unrelated data\n", encoding="utf-8")
+                shutil.copytree(ROOT / "overlay", self.root / "overlay")
+                # Make the source differ, so an unguarded build would write through the link.
+                rule = self.shared / ".claude/rules/maven.md"
+                rule.write_text(rule.read_text(encoding="utf-8") + "- A new rule.\n", encoding="utf-8")
+                make_link()
+                before = {str(p.relative_to(outside)): p.read_bytes() for p in outside.rglob("*") if p.is_file()}
+                for args in (("--check",), ()):
+                    result = self.build(*args)
+                    self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                    self.assertIn("symbolic links are not supported", result.stdout)
+                    self.assertEqual(
+                        {str(p.relative_to(outside)): p.read_bytes() for p in outside.rglob("*") if p.is_file()}, before
+                    )
+                    self.assertEqual(victim.read_text(encoding="utf-8"), "Unrelated data\n")
 
     def test_reference_style_definitions_that_cannot_be_converted_are_rejected(self):
         before = {p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}

@@ -159,6 +159,7 @@ class LayoutCheckerTests:
             "[Missing](not-present.md 'Title')",
             '[Missing](not-present.md (Title))',
             '[Missing](<not present.md> "Title")',
+            '[Missing [nested] label](not-present.md)',
         )
         for link in links:
             with self.subTest(link=link):

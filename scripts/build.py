@@ -20,6 +20,7 @@ links between files, which are recomputed for the new locations.
 
 Uses only the Python standard library (3.9 or later).
 """
+import os
 import posixpath
 import re
 import sys
@@ -34,7 +35,7 @@ GITHUB = ROOT / "overlay/github"
 # with or without a title, and refuses a relative destination in any other form,
 # so no link is ever copied into the other layout unconverted.
 LINK = re.compile(
-    r"(?P<open>\[[^\]\n]*\]\()"
+    r"(?P<open>\[(?:[^\[\]\n]|\[[^\[\]\n]*\])*\]\()"
     r"(?:<(?P<angle>[^<>\n]+)>|(?P<bare>(?:\\.|[^\s()\\]|\([^()\n]*\))+))"
     r"(?P<title>\s+(?:\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'|\([^()]*\)))?"
     r"(?P<close>\s*\))"
@@ -50,7 +51,10 @@ REFERENCE = re.compile(
 )
 SCHEME = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
 # Raw HTML can link too. It is not converted, so a relative target is refused.
-HTML_LINK = re.compile(r"""\b(?:href|src)\s*=\s*(["'])(?P<destination>[^"'\n]*)\1""", re.I)
+HTML_LINK = re.compile(r"""\b(?:href|src)\s*=\s*(?:"(?P<double>[^"\n]*)"|'(?P<single>[^'\n]*)'|(?P<plain>[^\s"'<>=`]+))""", re.I)
+# What separates one path-like word from the next when looking for paths that
+# none of the patterns above recognized as a link.
+WORD = re.compile(r"""[^\s()\[\]<>"'`=,;]+""")
 # Every file that moves lives under one of these names in the shared layout. If
 # one still appears in a generated file, some path was written in a form that
 # convert() does not recognize (plain text, a code span, an unusual link).
@@ -109,12 +113,16 @@ def rename_scope_key(text, old, new):
     return pattern.sub(f"{new}:", head) + rest
 
 
-def convert(text, source, target, mapping, exists):
+def convert(text, source, target, mapping, exists, known=()):
     """Recompute every relative link in `text` for the file's new location.
 
-    Covers inline links and reference-style definitions, so no relative
-    destination is copied into the other layout unconverted.
+    Covers inline links and reference-style definitions. Anything else that
+    names another file of the layout by a relative path which would change is
+    refused, so no path is copied into the other layout unconverted, whatever
+    Markdown or HTML form it was written in. `known` lists the layout's files.
     """
+    here = posixpath.dirname(str(source)) or "."
+    there = posixpath.dirname(str(target)) or "."
 
     def rewrite(match):
         destination = match.group("angle") or match.group("bare")
@@ -126,31 +134,67 @@ def convert(text, source, target, mapping, exists):
                 f"{source}: cannot convert link {destination}; write it as a plain relative path, "
                 "without angle brackets, escapes, parentheses or a query"
             )
-        resolved = posixpath.normpath(posixpath.join(posixpath.dirname(str(source)), path))
+        resolved = posixpath.normpath(posixpath.join(here, path))
         if resolved.startswith("..") or not exists(resolved):
             raise ValueError(f"{source}: link {destination} does not point inside the layout")
-        moved = posixpath.relpath(str(mapping(resolved)), posixpath.dirname(str(target)) or ".")
+        moved = posixpath.relpath(str(mapping(resolved)), there)
         if path.endswith("/"):
             moved += "/"
         title = match.groupdict().get("title") or ""
         return match.group("open") + moved + hash_mark + fragment + title + match.group("close")
 
     for match in HTML_LINK.finditer(text):
-        destination = match.group("destination")
-        if not (SCHEME.match(destination) or destination.startswith("#")):
+        destination = match.group("double") or match.group("single") or match.group("plain") or ""
+        if destination and not (SCHEME.match(destination) or destination.startswith("#")):
             raise ValueError(f"{source}: cannot convert HTML link {destination}; use a Markdown link")
+
+    # With the recognized links blanked out, no remaining word may be a relative
+    # path to a file of this layout whose path changes in the other layout. Such a
+    # word is a link in a form the patterns above do not recognize, or a path
+    # written as plain text, and copying it unchanged would leave it wrong.
+    remainder = REFERENCE.sub(" ", LINK.sub(" ", text))
+    files = set(known)
+    for word in set(WORD.findall(remainder)):
+        path = word.strip("*_").rstrip(".:!?").partition("#")[0]
+        if not path or SCHEME.match(path) or "\\" in path:
+            continue
+        resolved = posixpath.normpath(posixpath.join(here, path))
+        if resolved in files and posixpath.relpath(str(mapping(resolved)), there) != posixpath.normpath(path):
+            raise ValueError(
+                f"{source}: {path} is not written as a link this script can convert; "
+                f"use a plain Markdown link such as [text]({path})"
+            )
     return REFERENCE.sub(rewrite, LINK.sub(rewrite, text))
+
+
+def refuse_symlinks(root):
+    """Fail if `root`, a folder above it inside the repository, or anything under it is a symbolic link.
+
+    Git can store a symbolic link. Reading through one would pull in content
+    from outside the overlay, and writing through one would overwrite whatever
+    it points to, so both the source and the output tree must be free of them.
+    """
+    for folder in [root, *root.parents]:
+        if folder == ROOT:
+            break
+        if folder.is_symlink():
+            raise ValueError(f"{folder.relative_to(ROOT)}: symbolic links are not supported in the overlay")
+    for directory, folders, files in os.walk(root, followlinks=False):
+        for name in folders + files:
+            path = Path(directory) / name
+            if path.is_symlink():
+                raise ValueError(f"{path.relative_to(ROOT)}: symbolic links are not supported in the overlay")
 
 
 def convert_tree(source_root, mapping, old_key, new_key, rules_dir):
     """Return {relative path: bytes} for every file of `source_root` in the other layout."""
     result = {}
+    refuse_symlinks(source_root)
     files = sorted(p for p in source_root.rglob("*") if p.is_file() and p.name != ".DS_Store")
     if not files:
         raise ValueError(f"{source_root}: no files to convert")
+    known = [p.relative_to(source_root).as_posix() for p in files]
     for path in files:
-        if path.is_symlink():
-            raise ValueError(f"{path}: symbolic links are not supported in the overlay")
         source = PurePosixPath(path.relative_to(source_root).as_posix())
         target = mapping(source)
         data = path.read_bytes()
@@ -158,7 +202,7 @@ def convert_tree(source_root, mapping, old_key, new_key, rules_dir):
             text = data.decode("utf-8")
             if is_rule(source, rules_dir):
                 text = rename_scope_key(text, old_key, new_key)
-            text = convert(text, source, target, mapping, lambda rel: (source_root / rel).exists())
+            text = convert(text, source, target, mapping, lambda rel: (source_root / rel).exists(), known)
             data = text.encode("utf-8")
         if str(target) in result:
             raise ValueError(f"{source}: two files map to {target}")
@@ -194,11 +238,13 @@ def main(argv):
         print("Usage: build.py [--check]", file=sys.stderr)
         return 2
     try:
+        # Checked before anything is read, deleted or written: see refuse_symlinks.
+        refuse_symlinks(GITHUB)
         wanted = build_github()
+        existing = current(GITHUB)
     except (OSError, ValueError) as error:
         print(f"FAILED: {error}")
         return 1
-    existing = current(GITHUB)
     stale = sorted(k for k in wanted if existing.get(k) != wanted[k])
     extra = sorted(k for k in existing if k not in wanted)
     if argv == ["--check"]:
