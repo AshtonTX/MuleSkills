@@ -66,6 +66,9 @@ def to_github(rel):
     parts = PurePosixPath(rel).parts
     if parts == ("CLAUDE.md",):
         return PurePosixPath(".github/copilot-instructions.md")
+    if parts in ((".claude",), (".github",)):
+        # The folders themselves: everything under either lands under .github.
+        return PurePosixPath(".github")
     if parts[:2] == (".claude", "rules"):
         rest = parts[2:]
         if rest and rest[-1].endswith(".md"):
@@ -119,7 +122,8 @@ def convert(text, source, target, mapping, exists, known=()):
     Covers inline links and reference-style definitions. Anything else that
     names another file of the layout by a relative path which would change is
     refused, so no path is copied into the other layout unconverted, whatever
-    Markdown or HTML form it was written in. `known` lists the layout's files.
+    Markdown or HTML form it was written in. `known` lists the layout's files
+    and folders.
     """
     here = posixpath.dirname(str(source)) or "."
     there = posixpath.dirname(str(target)) or "."
@@ -149,7 +153,7 @@ def convert(text, source, target, mapping, exists, known=()):
             raise ValueError(f"{source}: cannot convert HTML link {destination}; use a Markdown link")
 
     # With the recognized links blanked out, no remaining word may be a relative
-    # path to a file of this layout whose path changes in the other layout. Such a
+    # path to a file or folder of this layout whose path changes in the other layout. Such a
     # word is a link in a form the patterns above do not recognize, or a path
     # written as plain text, and copying it unchanged would leave it wrong.
     remainder = REFERENCE.sub(" ", LINK.sub(" ", text))
@@ -193,7 +197,8 @@ def convert_tree(source_root, mapping, old_key, new_key, rules_dir):
     files = sorted(p for p in source_root.rglob("*") if p.is_file() and p.name != ".DS_Store")
     if not files:
         raise ValueError(f"{source_root}: no files to convert")
-    known = [p.relative_to(source_root).as_posix() for p in files]
+    known = {p.relative_to(source_root).as_posix() for p in files}
+    known |= {parent.as_posix() for name in list(known) for parent in PurePosixPath(name).parents if str(parent) != "."}
     for path in files:
         source = PurePosixPath(path.relative_to(source_root).as_posix())
         target = mapping(source)

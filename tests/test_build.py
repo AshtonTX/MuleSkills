@@ -194,12 +194,14 @@ class BuildTests(unittest.TestCase):
         cases = {
             '<a href=".github/mule/team-profile.md">Profile</a>': "cannot convert HTML link",
             "<img src='.github/mule/diagram.png'>": "cannot convert HTML link",
-            "Open the files in `.claude/rules/` by hand.": "would still mention .claude/",
+            "Open the files in `.claude/rules/` by hand.": ".claude/rules/ is not written as a link",
             "This file is installed as CLAUDE.md at the project root.": "is not written as a link",
             "<a href=.github/mule/team-profile.md>Profile</a>": "cannot convert HTML link",
             "See .github/mule/team-profile.md for the project's facts.": "is not written as a link",
             "The profile is `./.github/mule/team-profile.md`.": "is not written as a link",
             "[a [b [c] d] e](.github/mule/team-profile.md)": "is not written as a link",
+            "Open `.github/mule/`.": ".github/mule/ is not written as a link",
+            "The skill lives in the .claude folder.": ".claude is not written as a link",
         }
         for line, message in cases.items():
             with self.subTest(line=line):
@@ -210,6 +212,16 @@ class BuildTests(unittest.TestCase):
                 self.assertEqual({p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}, before)
         rules.write_text(original + '<a href="https://example.invalid/">External</a> <a href="#top">Top</a>\n', encoding="utf-8")
         self.assertEqual(self.build().returncode, 0)
+        # A shared-layout path given from the project root, in a file that is not at the root:
+        # it does not resolve from where the file sits, so the last guard is what catches it.
+        rule = self.shared / ".claude/rules/maven.md"
+        rule.write_text(
+            rule.read_text(encoding="utf-8") + "- Open `.claude/rules/dataweave.md` from the project root.\n",
+            encoding="utf-8",
+        )
+        result = self.build()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("would still mention .claude/", result.stdout)
 
     def test_link_label_with_nested_brackets_is_converted(self):
         rules = self.shared / "CLAUDE.md"
@@ -230,6 +242,9 @@ class BuildTests(unittest.TestCase):
             rule.read_text(encoding="utf-8") + "- Record the result in `.github/mule/team-profile.md` at the project root.\n",
             encoding="utf-8",
         )
+        # A folder whose relative path is the same in both layouts.
+        skill = self.shared / ".claude/skills/team-mule-guardrails/SKILL.md"
+        skill.write_text(skill.read_text(encoding="utf-8") + "The detail is in the references/ folder.\n", encoding="utf-8")
         self.assertEqual(self.build().returncode, 0)
         self.assert_current()
         rule.write_text(rule.read_text(encoding="utf-8") + "- See dataweave.md for scripts.\n", encoding="utf-8")
