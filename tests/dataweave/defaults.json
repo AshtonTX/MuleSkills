@@ -1,0 +1,11 @@
+{
+  "absent": false,
+  "explicitNull": true,
+  "missingDefault": "fallback",
+  "nullDefault": "fallback",
+  "zero": 0,
+  "falseValue": false,
+  "emptyString": "",
+  "emptyArray": [],
+  "invalidNumberDefault": 0
+}

@@ -1,0 +1,8 @@
+{
+  "firstDuplicate": 1,
+  "allDuplicates": [1, 3],
+  "mergedValue": 3,
+  "reorderedEquality": false,
+  "numericIndex": null,
+  "stringKey": "A"
+}

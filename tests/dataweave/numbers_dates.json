@@ -1,0 +1,10 @@
+{
+  "decimalSum": 0.3,
+  "thirdsDoNotRoundTrip": true,
+  "halfUp": "2.35",
+  "halfEven": "2",
+  "negativeRound": -3,
+  "fixedScale": "1.10",
+  "strictValidDate": "2026-02-15",
+  "smartInvalidDate": "2026-02-28"
+}

@@ -1,0 +1,7 @@
+{
+  "simpleSingle": "first",
+  "simpleMultiple": ["first", "second"],
+  "mixedSingle": ["first", "second"],
+  "mixedMultiple": [["first"], ["first", "second"]],
+  "explicitFirst": ["first", "first"]
+}

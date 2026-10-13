@@ -11,6 +11,7 @@
 set -euo pipefail
 
 usage() { echo "Usage: $0 <path-to-mule-project> [--update]" >&2; exit 2; }
+fail() { echo "Error: $*" >&2; exit 1; }
 [ $# -ge 1 ] || usage
 TARGET="$1"; shift
 UPDATE=no
@@ -21,17 +22,58 @@ for arg in "$@"; do
   esac
 done
 
-SRC="$(cd "$(dirname "$0")/.." && pwd)/overlay"
-[ -d "$TARGET" ] || { echo "Not a folder: $TARGET" >&2; exit 1; }
-TARGET="$(cd "$TARGET" && pwd)"
+SRC="$(cd -- "$(dirname "$0")/.." && pwd -P)/overlay"
+[ ! -L "$SRC" ] && [ -d "$SRC/.github" ] || fail "Missing or unsafe overlay: $SRC"
+[ -d "$TARGET" ] || fail "Not a folder: $TARGET"
+TARGET="$(cd -- "$TARGET" && pwd -P)"
 [ -f "$TARGET/pom.xml" ] || echo "Warning: no pom.xml in $TARGET. Is this the Mule project root?"
 
-added=0; same=0; updated=0; merge=""; kept=""
-while IFS= read -r file; do
+# Inspect the complete copy operation before creating or replacing any files.
+# A linked parent directory can redirect even a new file outside the project.
+check_destination() {
+  local rel="$1" parent="$TARGET" rest="$1" dest
+  while [[ "$rest" = */* ]]; do
+    parent="${parent%/}/${rest%%/*}"
+    [ ! -L "$parent" ] || fail "Destination contains a symbolic link: $parent"
+    if [ -e "$parent" ] && [ ! -d "$parent" ]; then
+      fail "Destination parent is not a directory: $parent"
+    fi
+    rest="${rest#*/}"
+  done
+  dest="${TARGET%/}/$rel"
+  [ ! -L "$dest" ] || fail "Destination is a symbolic link: $dest"
+  if [ -e "$dest" ] && [ ! -f "$dest" ]; then
+    fail "Destination is not a regular file: $dest"
+  fi
+}
+
+# Capture find's status directly; failures inside process substitution do not
+# propagate to the surrounding loop. NUL delimiters also preserve file names.
+manifest="$(mktemp "${TMPDIR:-/tmp}/mule-guardrails.XXXXXX")"
+trap 'rm -f "$manifest"' EXIT
+trap 'exit 1' HUP INT TERM
+find "$SRC" -print0 > "$manifest" || fail "Could not enumerate overlay: $SRC"
+files=()
+file_count=0
+while IFS= read -r -d '' file; do
+  [ ! -L "$file" ] || fail "Overlay contains a symbolic link: $file"
+  [ ! -d "$file" ] || continue
+  [ -f "$file" ] || fail "Overlay contains a non-regular file: $file"
+  [ "${file##*/}" != '.DS_Store' ] || continue
+  [ -r "$file" ] || fail "Overlay file is not readable: $file"
   rel="${file#"$SRC"/}"
-  dest="$TARGET/$rel"
+  check_destination "$rel"
+  files+=("$file")
+  file_count=$((file_count + 1))
+done < "$manifest"
+[ "$file_count" -gt 0 ] || fail "Overlay contains no files: $SRC"
+
+added=0; same=0; updated=0; merge=""; kept=""
+for file in "${files[@]}"; do
+  rel="${file#"$SRC"/}"
+  dest="${TARGET%/}/$rel"
   if [ ! -e "$dest" ]; then
-    mkdir -p "$(dirname "$dest")"
+    mkdir -p "${dest%/*}"
     cp "$file" "$dest"
     echo "  added    $rel"; added=$((added + 1))
   elif cmp -s "$file" "$dest"; then
@@ -52,7 +94,7 @@ while IFS= read -r file; do
   $rel"
     fi
   fi
-done < <(find "$SRC" -type f ! -name '.DS_Store' | sort)
+done
 
 echo
 echo "Added $added, updated $updated, already current $same."

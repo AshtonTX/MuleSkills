@@ -12,5 +12,25 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Check installer syntax
+        run: bash -n scripts/install.sh
       - name: Check guardrail files
         run: python3 scripts/check.py
+      - name: Test installer and checker
+        run: python3 -m unittest discover -s tests -v
+
+  dataweave:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download pinned DataWeave CLI
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 180 \
+            https://github.com/mulesoft/data-weave-cli/releases/download/v2.12.3/dw-cli-2.12.3-linux-x86_64.zip \
+            --output "$RUNNER_TEMP/dw-cli.zip"
+          echo "e99fc66ca7922e7ba8a780ef24557fff3367ce129460e778d58ed05ae1b4950c  $RUNNER_TEMP/dw-cli.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/dw-cli.zip" -d "$RUNNER_TEMP/dw-cli"
+      - name: Check DataWeave behavior at language levels 2.4–2.9
+        run: python3 scripts/check_dataweave.py --dw "$RUNNER_TEMP/dw-cli/bin/dw"

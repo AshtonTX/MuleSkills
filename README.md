@@ -26,9 +26,11 @@ overlay/.github/                     <- copied into each Mule project
 docs/sources.md                      where each rule comes from (stays in this repository)
 scripts/install.sh                   copies overlay/ into a project
 scripts/check.py                     checks the files before you share them
+scripts/check_dataweave.py           runs the retained DataWeave behavior checks
+tests/                              installer/checker regressions and DataWeave fixtures
 ```
 
-Only `overlay/.github/` goes into Mule projects. `docs/` and `scripts/` stay here.
+Only `overlay/.github/` goes into Mule projects. `docs/`, `scripts/` and `tests/` stay here.
 
 ## How Copilot uses the files
 
@@ -44,7 +46,7 @@ Not every Copilot client loads every file. According to GitHub's documentation (
 | Client | What loads automatically | What to do |
 |---|---|---|
 | VS Code, Copilot Chat | Repository instructions, path-specific instructions; skills in agent mode | Nothing extra |
-| GitHub Copilot app (desktop) | A repository Instructions setting and skills; loading `.github` instruction files is not documented | If the check below shows the rules are not applied, paste the text of `copilot-instructions.md` into the repository Instructions setting, and attach the relevant `instructions/` file |
+| GitHub Copilot app (desktop) | A repository Instructions setting and skills; loading `.github` instruction files is not documented | If the check below shows the rules are not applied, paste the text of `copilot-instructions.md` into the repository Instructions setting, and attach the relevant `instructions/` file and `mule/team-profile.md` |
 | Eclipse and Anypoint Studio, Copilot Chat | Repository instructions only | Attach the relevant `instructions/` file and `mule/team-profile.md` to your request |
 | Any other client | Not established | Check that client's documentation; don't assume VS Code features |
 
@@ -91,7 +93,7 @@ git switch -c chore/copilot-guardrails
 /path/to/MuleSkills/scripts/install.sh .
 ```
 
-The script copies new files and never deletes anything. If the project already has a `.github/copilot-instructions.md`, it keeps the project's version and tells you; copy the rules from `overlay/.github/copilot-instructions.md` into it by hand.
+The script copies new files and never deletes anything. It checks all destinations before copying and rejects symbolic links or file/directory collisions so installation cannot follow a link outside the project. If the project already has a `.github/copilot-instructions.md`, it keeps the project's version and tells you; copy the rules from `overlay/.github/copilot-instructions.md` into it by hand.
 
 **Windows without Git Bash:** copy the folders inside `overlay/.github/` (`instructions`, `skills`, `mule`) into the project's `.github` folder, and copy `copilot-instructions.md` if the project doesn't have one already.
 
@@ -126,7 +128,7 @@ Review the diff like any other change and merge it with the team's normal proces
 
 ## Day-to-day use
 
-Work as usual. In VS Code and the Copilot app the rules apply on their own. In Anypoint Studio or Eclipse, attach the matching `instructions/` file and `mule/team-profile.md` to your request.
+Work as usual after verifying activation in your client. VS Code supports automatic repository and path-specific instructions; use the desktop app's verified settings or the fallback above. In Anypoint Studio or Eclipse, attach the matching `instructions/` file and `mule/team-profile.md` to your request.
 
 For common tasks, start from a prompt in `.github/mule/task-recipes.md`:
 
@@ -156,15 +158,27 @@ You still review everything Copilot produces. These rules reduce common mistakes
 
 ```sh
 python3 scripts/check.py
+bash -n scripts/install.sh
+python3 -m unittest discover -s tests -v
 ```
 
-The same check runs in GitHub Actions on every push and pull request (`.github/workflows/check.yml`). Delete that workflow if your organization doesn't use Actions.
+These checks run in GitHub Actions on every push and pull request (`.github/workflows/check.yml`). The regression tests use temporary projects to check installation, update protection, unsafe paths, metadata and links. They need Python 3.9+, Bash and Git, and no Mule credentials. Delete that workflow if your organization doesn't use Actions.
+
+Keep front matter to the checker-supported YAML subset: unique, unindented keys with single-line string values. Quote `applyTo` globs. Collections and block scalars are not supported; comments and blank lines are allowed. The checker validates inline local links, including titled links; it does not check remote availability or prove that a Copilot client loaded the files.
 
 To test a DataWeave rule, write a small script and run it with the [DataWeave CLI](https://github.com/mulesoft/data-weave-cli). Use `--language-level` to match the project's `minMuleVersion` (Mule 4.6 is level 2.6, Mule 4.9 is 2.9):
 
 ```sh
 dw run --language-level 2.9 -f test.dwl
 ```
+
+Run the retained correctness fixtures with a locally installed CLI:
+
+```sh
+python3 scripts/check_dataweave.py --dw /path/to/dw
+```
+
+The runner checks language levels 2.4–2.9 by default and fails if the CLI is missing or a result differs. It compares JSON numbers as exact decimals and keeps Boolean and numeric values distinct. Add a `.dwl` fixture with either a neighboring `.json` expected result or an `.error.txt` expected failure diagnostic. Use `--language-level 2.9` for a targeted run. CI downloads CLI 2.12.3 (runtime 2.12.2), verifies its SHA-256 checksum, and runs the same fixtures. A language-level flag does not install an older engine or reproduce Mule's JVM and system properties. These are native CLI regression checks; validate runtime-sensitive behavior in the target Mule application as well.
 
 **Update a project** on a branch:
 
@@ -175,7 +189,16 @@ git diff
 
 `--update` replaces the shared rule files with this repository's versions. It never touches the project's `copilot-instructions.md` or `team-profile.md`.
 
-**Remove from a project:** delete `.github/instructions/`, `.github/skills/team-mule-guardrails/` and `.github/mule/`, and take the guardrail rules out of `.github/copilot-instructions.md`.
+**Remove from a project:** review the installed files on a branch. Remove only these shared files if they still belong to this overlay:
+
+- `.github/instructions/dataweave.instructions.md`
+- `.github/instructions/maven.instructions.md`
+- `.github/instructions/mule-xml.instructions.md`
+- `.github/instructions/munit.instructions.md`
+- `.github/skills/team-mule-guardrails/SKILL.md`
+- `.github/mule/task-recipes.md`
+
+Take only the guardrail text out of `.github/copilot-instructions.md`, preserving the project's other instructions. Keep `.github/mule/team-profile.md` if its project facts are still useful, or remove it after review. Preserve unrelated files and local customizations; remove a containing directory only when it is empty. Review `git diff` before committing.
 
 ## MuleSoft DX skills
 
