@@ -201,6 +201,9 @@ class BuildTests(unittest.TestCase):
             "The profile is `./.github/mule/team-profile.md`.": "is not written as a link",
             "[a [b [c] d] e](.github/mule/team-profile.md)": "is not written as a link",
             "Open `.github/mule/`.": ".github/mule/ is not written as a link",
+            "[a [b [c] d] e](.github/mule/team\\-profile.md)": "is not written as a link",
+            "[a [b [c] d] e](.github/mule/team%2Dprofile.md)": "is not written as a link",
+            "[a [b [c] d] e](.github/mule/team-profile.md?plain=1)": "is not written as a link",
             "The skill lives in the .claude folder.": ".claude is not written as a link",
         }
         for line, message in cases.items():

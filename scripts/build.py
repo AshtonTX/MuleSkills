@@ -23,8 +23,10 @@ Uses only the Python standard library (3.9 or later).
 import os
 import posixpath
 import re
+import string
 import sys
 from pathlib import Path, PurePosixPath
+from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parent.parent
 SHARED = ROOT / "overlay/shared"
@@ -55,6 +57,8 @@ HTML_LINK = re.compile(r"""\b(?:href|src)\s*=\s*(?:"(?P<double>[^"\n]*)"|'(?P<si
 # What separates one path-like word from the next when looking for paths that
 # none of the patterns above recognized as a link.
 WORD = re.compile(r"""[^\s()\[\]<>"'`=,;]+""")
+# Markdown lets a backslash escape any ASCII punctuation character.
+MARKDOWN_ESCAPE = re.compile(r"\\([" + re.escape(string.punctuation) + r"])")
 # Every file that moves lives under one of these names in the shared layout. If
 # one still appears in a generated file, some path was written in a form that
 # convert() does not recognize (plain text, a code span, an unusual link).
@@ -159,8 +163,10 @@ def convert(text, source, target, mapping, exists, known=()):
     remainder = REFERENCE.sub(" ", LINK.sub(" ", text))
     files = set(known)
     for word in set(WORD.findall(remainder)):
-        path = word.strip("*_").rstrip(".:!?").partition("#")[0]
-        if not path or SCHEME.match(path) or "\\" in path:
+        path = re.split(r"[#?]", word.strip("*_").rstrip(".:!?"), maxsplit=1)[0]
+        # Read the word the way Markdown would: undo backslash escapes and percent-encoding.
+        path = unquote(MARKDOWN_ESCAPE.sub(r"\1", path))
+        if not path or SCHEME.match(path):
             continue
         resolved = posixpath.normpath(posixpath.join(here, path))
         if resolved in files and posixpath.relpath(str(mapping(resolved)), there) != posixpath.normpath(path):
