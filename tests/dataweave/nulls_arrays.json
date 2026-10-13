@@ -1,0 +1,13 @@
+{
+  "nullMap": null,
+  "nullSize": null,
+  "emptyReduce": null,
+  "initializedReduce": 0,
+  "takeNegative": [],
+  "takePastEnd": [1, 2, 3],
+  "dropPastEnd": [],
+  "negativeSliceEnd": [],
+  "outOfBoundsRange": null,
+  "reversedRange": [2, 1, 0],
+  "removeAllMatches": ["b"]
+}

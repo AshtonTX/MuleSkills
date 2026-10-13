@@ -1,0 +1,2 @@
+# Git Bash needs LF shebangs even when core.autocrlf is enabled.
+*.sh text eol=lf
