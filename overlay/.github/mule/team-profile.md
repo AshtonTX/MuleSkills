@@ -53,7 +53,7 @@ Current decision: **not selected; no upstream workflow enabled by these guardrai
 | Main Mule XML | Repository, Mule XML and embedded DataWeave rules | Not run |
 | `.dwl` | Repository and DataWeave rules | Not run |
 | MUnit XML with expressions | Repository, MUnit and DataWeave rules | Not run |
-| POM / artifact descriptor | Repository and Maven rules | Not run |
+| POM / artifact descriptor / `.mvn/` / GitHub Actions workflow | Repository and Maven rules | Not run |
 | `src/main/resources/log4j2.xml` | Repository and Mule XML rules | Not run |
 | Skill invocation and linked files | Selected skill, profile and relevant scoped guidance opened | Not run |
 | Unapproved upstream skill (negative) | Not selected for a DataWeave change | Not run |

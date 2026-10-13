@@ -17,7 +17,7 @@ overlay/.github/                     <- copied into each Mule project
     mule-xml.instructions.md         Mule XML, error handling, architecture, Government Cloud, logging
     dataweave.instructions.md        DataWeave correctness, money, dates, lookups, output formats, performance
     munit.instructions.md            MUnit tests that prove behavior
-    maven.instructions.md            POMs, versions, builds and deployment
+    maven.instructions.md            POMs, artifact descriptors, Maven/CI configuration and deployment
   skills/team-mule-guardrails/
     SKILL.md                         step-by-step workflow Copilot can choose for MuleSoft tasks
   mule/
@@ -37,7 +37,7 @@ Only `overlay/.github/` goes into Mule projects. `docs/`, `scripts/` and `tests/
 | File | When Copilot reads it |
 |---|---|
 | `copilot-instructions.md` | Every request in the project, in clients that support repository instructions |
-| `instructions/*.instructions.md` | When you work on matching files: Mule XML and `log4j2.xml`, `.dwl` files, MUnit tests, `pom.xml` and `mule-artifact.json` |
+| `instructions/*.instructions.md` | When you work on matching files: Mule XML and `log4j2.xml`, `.dwl` files, MUnit tests, `pom.xml`, `mule-artifact.json`, `.mvn/` and GitHub Actions workflows |
 | `skills/team-mule-guardrails/SKILL.md` | When Copilot decides your request matches the skill's description, in clients that support skills |
 | `mule/*.md` | When another file links to them and the client follows the link, or when you attach them |
 
@@ -141,6 +141,7 @@ For common tasks, start from a prompt in `.github/mule/task-recipes.md`:
 | 4. Review a Mule change | Get findings with file, line, impact and fix |
 | 5. Check a restricted-environment tool | Check whether a product or tool is supported in Government Cloud before using it |
 | 6. Diagnose a failing build or MUnit suite | Find the cause without upgrading versions to hide it |
+| 7. Upgrade an approved Mule runtime or Java version | Check compatibility and behavior changes separately before the requested upgrade |
 
 What to expect from Copilot with these rules:
 
