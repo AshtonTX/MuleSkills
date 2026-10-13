@@ -1,5 +1,6 @@
 ---
 applyTo: "**/*.raml,**/src/main/resources/api/**"
+description: "API specification and APIkit rules: authentication enforcement, request validation and contract-to-flow routing."
 ---
 
 # API contract changes

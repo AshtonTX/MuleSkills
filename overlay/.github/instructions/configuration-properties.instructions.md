@@ -1,5 +1,6 @@
 ---
 applyTo: "**/src/main/resources/**/*.yaml,**/src/main/resources/**/*.properties,**/src/test/resources/**/*.yaml,**/src/test/resources/**/*.properties"
+description: "Rules for Mule configuration and secure property files: value types, precedence, environment selection and encryption."
 ---
 
 # Mule configuration properties

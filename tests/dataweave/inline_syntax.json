@@ -1,0 +1,6 @@
+{
+  "singleQuoted": "ab",
+  "quotesInsideSingle": "say \"hi\"",
+  "cdataEndSequence": true,
+  "spacedEquivalent": true
+}

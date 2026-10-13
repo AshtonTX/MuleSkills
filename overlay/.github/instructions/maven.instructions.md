@@ -1,5 +1,6 @@
 ---
 applyTo: "**/pom.xml,**/mule-artifact.json,**/.mvn/**,.github/workflows/*.yml,.github/workflows/*.yaml"
+description: "Build rules for the POM, mule-artifact.json, Maven settings and CI workflows: versions, dependencies, test selection and deployment."
 ---
 
 # Build and version discipline

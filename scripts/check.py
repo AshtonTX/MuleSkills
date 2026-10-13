@@ -3,10 +3,12 @@
 
 Checks:
   - every scoped instruction file starts with front matter that sets `applyTo`
+    and, when it has a `description`, a nonempty one
   - the skill's front matter has a `name` matching its folder and a `description`
   - inline relative Markdown links, with optional titles, point to existing paths
   - links inside overlay/ stay inside overlay/, so the files still work after
     they are copied into a Mule project
+  - every overlay Markdown file is small enough for Copilot to read in one call
 
 Uses only the Python standard library (3.9 or later). Exit code 0 means every
 check passed. It does not run Mule, DataWeave, MUnit or Copilot.
@@ -36,6 +38,11 @@ MARKDOWN_ESCAPE = re.compile(r"\\([" + re.escape(string.punctuation) + r"])")
 FRONT_MATTER = re.compile(r"\A---\n(.*?)\n---(?:\n|\Z)", re.S)
 FIELD = re.compile(r"([A-Za-z][A-Za-z0-9_-]*):(?:[ \t]+(.*))?")
 NON_STRING = {"y", "n", "yes", "no", "true", "false", "on", "off", "null"}
+# Copilot CLI and the Copilot desktop app do not inject scoped instruction files:
+# the model opens them with a file-view tool that returns nothing but a
+# "File too large" notice above 20 KiB (20,480 bytes; measured on CLI 1.0.96),
+# and a ranged read cuts off whatever lies past that size. Stay well below it.
+MAX_OVERLAY_FILE_BYTES = 18_000
 
 REQUIRED = [
     ".github/copilot-instructions.md",
@@ -46,6 +53,11 @@ REQUIRED = [
     ".github/instructions/mule-xml.instructions.md",
     ".github/instructions/munit.instructions.md",
     ".github/skills/team-mule-guardrails/SKILL.md",
+    ".github/skills/team-mule-guardrails/references/dataweave-operators.md",
+    ".github/skills/team-mule-guardrails/references/dataweave-output-formats.md",
+    ".github/skills/team-mule-guardrails/references/dataweave-performance.md",
+    ".github/skills/team-mule-guardrails/references/mule-connectors.md",
+    ".github/skills/team-mule-guardrails/references/mule-deployment-targets.md",
     ".github/mule/team-profile.md",
     ".github/mule/task-recipes.md",
 ]
@@ -114,6 +126,8 @@ def main():
         patterns = fields.get("applyTo", "").split(",")
         if any(not pattern.strip() for pattern in patterns):
             errors.append(f"{path.relative_to(ROOT)}: applyTo must set nonempty glob patterns")
+        if "description" in fields and not fields["description"].strip():
+            errors.append(f"{path.relative_to(ROOT)}: description must not be empty when present")
 
     for skill in sorted((OVERLAY / ".github/skills").glob("*/SKILL.md")):
         try:
@@ -125,6 +139,14 @@ def main():
             errors.append(f"{skill.relative_to(ROOT)}: name must be '{skill.parent.name}'")
         if not fields.get("description", "").strip():
             errors.append(f"{skill.relative_to(ROOT)}: description is required")
+
+    for path in sorted(OVERLAY.rglob("*.md")):
+        size = path.stat().st_size
+        if size > MAX_OVERLAY_FILE_BYTES:
+            errors.append(
+                f"{path.relative_to(ROOT)}: {size} bytes exceeds {MAX_OVERLAY_FILE_BYTES}; "
+                "Copilot cannot read a larger file in one call, so move situational detail to a reference file"
+            )
 
     for path in sorted(ROOT.rglob("*.md")):
         if ".git" in path.parts:
@@ -147,7 +169,11 @@ def main():
         for error in errors:
             print(f"  - {error}")
         return 1
-    print(f"OK: {len(REQUIRED)} overlay files present; front matter and links valid")
+    largest = max(path.stat().st_size for path in OVERLAY.rglob("*.md"))
+    print(
+        f"OK: {len(REQUIRED)} overlay files present; front matter and links valid; "
+        f"largest file {largest} of {MAX_OVERLAY_FILE_BYTES} bytes"
+    )
     return 0
 
 
