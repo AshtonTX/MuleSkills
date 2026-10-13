@@ -39,6 +39,8 @@ NON_STRING = {"y", "n", "yes", "no", "true", "false", "on", "off", "null"}
 
 REQUIRED = [
     ".github/copilot-instructions.md",
+    ".github/instructions/api-contract.instructions.md",
+    ".github/instructions/configuration-properties.instructions.md",
     ".github/instructions/dataweave.instructions.md",
     ".github/instructions/maven.instructions.md",
     ".github/instructions/mule-xml.instructions.md",

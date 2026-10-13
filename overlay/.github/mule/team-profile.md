@@ -23,7 +23,8 @@ This template records facts, not proposed version upgrades. Government Cloud is 
 | Shared assets | Unknown | Exchange templates, fragments and libraries the team reuses (for example a common error handler or logging framework); use these instead of writing new ones |
 | Connector approval | Unknown | Connectors approved for use and their support category (Select, Premium, Certified partner-supported, or unsupported community); adding a connector needs approval |
 | Architecture conventions | Unknown | Whether API-led layers (system/process/experience) are used and how projects are named per layer (for example `-sapi`, `-papi`, `-eapi` suffixes); health-check endpoint convention; file layout (for example a common flows file and per-resource folders under `src/main/resources`); where shared configuration and the default error handler live; per-environment property file pattern; error response shape and code list |
-| API/error contract and shared conventions | Unknown; follow reviewed existing code | RAML/OAS/schema, tests, flow boundaries, naming and redacted logging |
+| API/error contract and shared conventions | Unknown; follow reviewed existing code | Root RAML/OAS path and version, referenced fragments/assets, pinned APIkit coordinates, parser/validation settings, authentication enforcement reference, tests, flow boundaries, naming and redacted logging |
+| Configuration property resolution | Unknown | Provider files and loading order, environment-selector source, deployment override names, secure-properties module and encryption-setting references; never record secret values or encryption keys |
 | Null/empty/type/precision/date/ordering rules | Per operation; unknown until contract supplied | Contract plus positive and negative fixtures |
 | Targeted and aggregate local checks | Unknown | Reviewed README/CI commands, selected counts, plugin side effects |
 | Approved data and external access | Unknown | Allowed code/API-spec/metadata classes, public searches/docs, tools, model/service and network rules; GitHub enterprise policies or managed settings that restrict MCP servers and plugins |
@@ -55,6 +56,8 @@ Current decision: **not selected; no upstream workflow enabled by these guardrai
 | MUnit XML with expressions | Repository, MUnit and DataWeave rules | Not run |
 | POM / artifact descriptor / `.mvn/` / GitHub Actions workflow | Repository and Maven rules | Not run |
 | `src/main/resources/log4j2.xml` | Repository and Mule XML rules | Not run |
+| RAML / `src/main/resources/api/` definition or fragment | Repository and API contract rules; explicitly open guidance for other OAS locations | Not run |
+| Resource `.yaml` / `.properties` loaded by Mule | Repository and configuration-property rules; MUnit also matches test resources | Not run |
 | Skill invocation and linked files | Selected skill, profile and relevant scoped guidance opened | Not run |
 | Unapproved upstream skill (negative) | Not selected for a DataWeave change | Not run |
 

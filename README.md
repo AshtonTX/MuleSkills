@@ -18,6 +18,8 @@ overlay/.github/                     <- copied into each Mule project
     dataweave.instructions.md        DataWeave correctness, money, dates, lookups, output formats, performance
     munit.instructions.md            MUnit tests that prove behavior
     maven.instructions.md            POMs, artifact descriptors, Maven/CI configuration and deployment
+    api-contract.instructions.md     APIkit authentication, validation and contract-to-flow routing
+    configuration-properties.instructions.md  property types, precedence, selection and encryption
   skills/team-mule-guardrails/
     SKILL.md                         step-by-step workflow Copilot can choose for MuleSoft tasks
   mule/
@@ -37,7 +39,7 @@ Only `overlay/.github/` goes into Mule projects. `docs/`, `scripts/` and `tests/
 | File | When Copilot reads it |
 |---|---|
 | `copilot-instructions.md` | Every request in the project, in clients that support repository instructions |
-| `instructions/*.instructions.md` | When you work on matching files: Mule XML and `log4j2.xml`, `.dwl` files, MUnit tests, `pom.xml`, `mule-artifact.json`, `.mvn/` and GitHub Actions workflows |
+| `instructions/*.instructions.md` | When you work on matching files: Mule XML and `log4j2.xml`, `.dwl` files, MUnit tests, `pom.xml`, `mule-artifact.json`, `.mvn/`, GitHub Actions workflows, RAML/API resources, and resource `.yaml`/`.properties` files |
 | `skills/team-mule-guardrails/SKILL.md` | When Copilot decides your request matches the skill's description, in clients that support skills |
 | `mule/*.md` | When another file links to them and the client follows the link, or when you attach them |
 
@@ -50,6 +52,8 @@ Not every Copilot client loads every file. According to GitHub's documentation (
 | Eclipse, Copilot Chat | Repository instructions only | Attach the relevant `instructions/` file and `mule/team-profile.md` to your request |
 | Anypoint Studio | Installed extension compatibility and instruction loading unverified | Verify the extension and activation; attach the relevant guidance manually |
 | Any other client | Not established | Check that client's documentation; don't assume VS Code features |
+
+API guidance matches `.raml` files and `src/main/resources/api/`; open it explicitly for OAS files elsewhere. Configuration-property guidance matches `.yaml` and `.properties` under main/test resources and applies only when Mule loads them as properties. API examples and ordinary test fixtures are not property files. The existing skill links to both files for related XML changes. Nonstandard layouts and other CI vendors need explicit guidance loading or project-reviewed globs.
 
 ## Set it up at work
 
@@ -197,6 +201,8 @@ git diff
 - `.github/instructions/maven.instructions.md`
 - `.github/instructions/mule-xml.instructions.md`
 - `.github/instructions/munit.instructions.md`
+- `.github/instructions/api-contract.instructions.md`
+- `.github/instructions/configuration-properties.instructions.md`
 - `.github/skills/team-mule-guardrails/SKILL.md`
 - `.github/mule/task-recipes.md`
 

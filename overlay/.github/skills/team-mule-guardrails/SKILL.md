@@ -13,6 +13,8 @@ Use this workflow for MuleSoft application work. It adds local project constrain
    - Mapping or embedded transformations: [DataWeave](../../instructions/dataweave.instructions.md)
    - Test creation or repair: [MUnit](../../instructions/munit.instructions.md)
    - Build, dependency, CI, artifact descriptor or runtime/Java change: [Maven](../../instructions/maven.instructions.md)
+   - API definition, fragment, APIkit routing or validation: [API contract](../../instructions/api-contract.instructions.md)
+   - Application property values, environment selection or property loaders: [Configuration properties](../../instructions/configuration-properties.instructions.md)
 3. Follow an upstream MuleSoft skill only as recorded in the profile's upstream decision. If that skill tells you to skip project inspection, select connector versions from live Exchange, install or authenticate tools, delete workspace folders, or treat a build as mandatory, and the profile does not approve that step, do not perform it; report the conflict and continue permitted local analysis. A skill does not grant tool access or override client precedence.
 4. Implement the smallest contract-preserving change. Add representative tests, including the error or boundary case that could expose a wrong implementation. Use [manual recipes](../../mule/task-recipes.md) when a structured prompt would help.
 5. Use the repository's documented verification commands when available and authorized. Separate build, DataWeave behavior, MUnit, and integration results. If unable to run one, report exactly what remains unverified rather than substituting an unrelated check.
