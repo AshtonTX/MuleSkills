@@ -167,6 +167,46 @@ class BuildTests(unittest.TestCase):
         self.assertIn("See [the profile][profile], [the rules][dw] and [the docs][docs].[^note]\n", generated)
         self.assert_current()
 
+    def test_reference_definition_with_destination_on_the_next_line_is_converted(self):
+        rules = self.shared / "CLAUDE.md"
+        rules.write_text(
+            rules.read_text(encoding="utf-8")
+            + "See [the profile][profile] and [the rules][dw].\n\n"
+            + "[profile]:\n  .github/mule/team-profile.md\n"
+            + '[dw]:\n    .claude/rules/dataweave.md\n    "DataWeave rules"\n',
+            encoding="utf-8",
+        )
+        self.assertEqual(self.build().returncode, 0)
+        generated = (self.github / ".github/copilot-instructions.md").read_text(encoding="utf-8")
+        self.assertIn("\n[profile]:\n  mule/team-profile.md\n", generated)
+        self.assertIn('\n[dw]:\n    instructions/dataweave.instructions.md\n    "DataWeave rules"\n', generated)
+        self.assert_current()
+        rules.write_text(rules.read_text(encoding="utf-8") + "[gone]:\n  .github/mule/missing.md\n", encoding="utf-8")
+        result = self.build()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("does not point inside the layout", result.stdout)
+
+    def test_paths_the_generator_cannot_see_as_links_are_rejected(self):
+        # Anything that would leave a shared-layout path in the generated files fails the build.
+        before = {p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}
+        rules = self.shared / "CLAUDE.md"
+        original = rules.read_text(encoding="utf-8")
+        cases = {
+            '<a href=".github/mule/team-profile.md">Profile</a>': "cannot convert HTML link",
+            "<img src='.github/mule/diagram.png'>": "cannot convert HTML link",
+            "Open the files in `.claude/rules/` by hand.": "would still mention .claude/",
+            "This file is installed as CLAUDE.md at the project root.": "would still mention CLAUDE.md",
+        }
+        for line, message in cases.items():
+            with self.subTest(line=line):
+                rules.write_text(original + line + "\n", encoding="utf-8")
+                result = self.build()
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(message, result.stdout)
+                self.assertEqual({p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}, before)
+        rules.write_text(original + '<a href="https://example.invalid/">External</a> <a href="#top">Top</a>\n', encoding="utf-8")
+        self.assertEqual(self.build().returncode, 0)
+
     def test_reference_style_definitions_that_cannot_be_converted_are_rejected(self):
         before = {p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}
         rules = self.shared / "CLAUDE.md"

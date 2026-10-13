@@ -39,15 +39,22 @@ LINK = re.compile(
     r"(?P<title>\s+(?:\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'|\([^()]*\)))?"
     r"(?P<close>\s*\))"
 )
-# A reference-style definition on its own line: [label]: destination "optional title".
+# A reference-style definition: [label]: destination "optional title". Markdown
+# allows one line break between the colon and the destination.
 # Footnote definitions ([^note]: text) are not links and are left alone.
 REFERENCE = re.compile(
-    r"^(?P<open>[ ]{0,3}\[(?!\^)[^\]\n]+\]:[ \t]*)"
+    r"^(?P<open>[ ]{0,3}\[(?!\^)[^\]\n]+\]:[ \t]*(?:\n[ \t]*)?)"
     r"(?:<(?P<angle>[^<>\n]+)>|(?P<bare>\S+))"
     r"(?P<close>[^\n]*)$",
     re.M,
 )
 SCHEME = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
+# Raw HTML can link too. It is not converted, so a relative target is refused.
+HTML_LINK = re.compile(r"""\b(?:href|src)\s*=\s*(["'])(?P<destination>[^"'\n]*)\1""", re.I)
+# Every file that moves lives under one of these names in the shared layout. If
+# one still appears in a generated file, some path was written in a form that
+# convert() does not recognize (plain text, a code span, an unusual link).
+SHARED_ONLY = re.compile(r"\.claude/|CLAUDE\.md")
 
 
 def to_github(rel):
@@ -128,6 +135,10 @@ def convert(text, source, target, mapping, exists):
         title = match.groupdict().get("title") or ""
         return match.group("open") + moved + hash_mark + fragment + title + match.group("close")
 
+    for match in HTML_LINK.finditer(text):
+        destination = match.group("destination")
+        if not (SCHEME.match(destination) or destination.startswith("#")):
+            raise ValueError(f"{source}: cannot convert HTML link {destination}; use a Markdown link")
     return REFERENCE.sub(rewrite, LINK.sub(rewrite, text))
 
 
@@ -156,7 +167,15 @@ def convert_tree(source_root, mapping, old_key, new_key, rules_dir):
 
 
 def build_github():
-    return convert_tree(SHARED, to_github, "paths", "applyTo", (".claude", "rules"))
+    result = convert_tree(SHARED, to_github, "paths", "applyTo", (".claude", "rules"))
+    for name, data in result.items():
+        leftover = SHARED_ONLY.search(data.decode("utf-8")) if name.endswith(".md") else None
+        if leftover:
+            raise ValueError(
+                f"overlay/github/{name} would still mention {leftover.group(0)}, which does not exist in that layout; "
+                "in overlay/shared, write the path as a Markdown link so it can be converted"
+            )
+    return result
 
 
 def current(root):
