@@ -20,6 +20,7 @@ links between files, which are recomputed for the new locations.
 
 Uses only the Python standard library (3.9 or later).
 """
+import html
 import os
 import posixpath
 import re
@@ -57,6 +58,11 @@ HTML_LINK = re.compile(r"""\b(?:href|src)\s*=\s*(?:"(?P<double>[^"\n]*)"|'(?P<si
 # What separates one path-like word from the next when looking for paths that
 # none of the patterns above recognized as a link.
 WORD = re.compile(r"""[^\s()\[\]<>"'`=,;]+""")
+# Names allowed for files and folders in the overlay. None of these characters
+# separates words or needs escaping in Markdown or HTML, so a path to an overlay
+# file is always one unbroken word however it is written, and the check for
+# unconverted paths in convert() cannot be split around.
+SAFE_NAME = re.compile(r"[A-Za-z0-9._-]+")
 # Markdown lets a backslash escape any ASCII punctuation character.
 MARKDOWN_ESCAPE = re.compile(r"\\([" + re.escape(string.punctuation) + r"])")
 # Every file that moves lives under one of these names in the shared layout. If
@@ -160,16 +166,22 @@ def convert(text, source, target, mapping, exists, known=()):
     # path to a file or folder of this layout whose path changes in the other layout. Such a
     # word is a link in a form the patterns above do not recognize, or a path
     # written as plain text, and copying it unchanged would leave it wrong.
-    remainder = REFERENCE.sub(" ", LINK.sub(" ", text))
-    files = set(known)
+    # Read the text the way Markdown would: character references first, then,
+    # word by word, backslash escapes and percent-encoding.
+    remainder = html.unescape(REFERENCE.sub(" ", LINK.sub(" ", text)))
+    exact = set(known)
+    any_case = {name.casefold(): name for name in known}
     for word in set(WORD.findall(remainder)):
         path = re.split(r"[#?]", word.strip("*_").rstrip(".:!?"), maxsplit=1)[0]
-        # Read the word the way Markdown would: undo backslash escapes and percent-encoding.
         path = unquote(MARKDOWN_ESCAPE.sub(r"\1", path))
         if not path or SCHEME.match(path):
             continue
         resolved = posixpath.normpath(posixpath.join(here, path))
-        if resolved in files and posixpath.relpath(str(mapping(resolved)), there) != posixpath.normpath(path):
+        # A file system may ignore case, so a path-like word is matched without it.
+        # An ordinary word such as "References" is only matched exactly.
+        if "/" in path or "." in path:
+            resolved = any_case.get(resolved.casefold(), resolved)
+        if resolved in exact and posixpath.relpath(str(mapping(resolved)), there) != posixpath.normpath(path):
             raise ValueError(
                 f"{source}: {path} is not written as a link this script can convert; "
                 f"use a plain Markdown link such as [text]({path})"
@@ -204,6 +216,11 @@ def convert_tree(source_root, mapping, old_key, new_key, rules_dir):
     if not files:
         raise ValueError(f"{source_root}: no files to convert")
     known = {p.relative_to(source_root).as_posix() for p in files}
+    for name in sorted(known):
+        if not all(SAFE_NAME.fullmatch(part) for part in PurePosixPath(name).parts):
+            raise ValueError(
+                f"{name}: overlay file and folder names may use only letters, digits, '.', '_' and '-'"
+            )
     known |= {parent.as_posix() for name in list(known) for parent in PurePosixPath(name).parents if str(parent) != "."}
     for path in files:
         source = PurePosixPath(path.relative_to(source_root).as_posix())

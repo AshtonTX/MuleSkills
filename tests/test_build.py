@@ -204,6 +204,8 @@ class BuildTests(unittest.TestCase):
             "[a [b [c] d] e](.github/mule/team\\-profile.md)": "is not written as a link",
             "[a [b [c] d] e](.github/mule/team%2Dprofile.md)": "is not written as a link",
             "[a [b [c] d] e](.github/mule/team-profile.md?plain=1)": "is not written as a link",
+            "[a [b [c] d] e](.github&#47;mule&sol;team-profile.md)": "is not written as a link",
+            "[a [b [c] d] e](.GitHub/Mule/Team-Profile.md)": "is not written as a link",
             "The skill lives in the .claude folder.": ".claude is not written as a link",
         }
         for line, message in cases.items():
@@ -254,6 +256,30 @@ class BuildTests(unittest.TestCase):
         result = self.build()
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("dataweave.md is not written as a link", result.stdout)
+
+    def test_overlay_names_are_limited_to_plain_characters(self):
+        # A name with a space, bracket or parenthesis could be split by the unconverted-path check.
+        before = {p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}
+        for name in (".github/mule/notes(v2).md", ".github/mule/extra notes.md", ".claude/rules/a[b].md",
+                     ".claude/skills/team-mule-guardrails/more refs/x.md"):
+            with self.subTest(name=name):
+                path = self.shared / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('---\npaths: "**/*.x"\ndescription: "x"\n---\n', encoding="utf-8")
+                result = self.build()
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn("names may use only letters, digits", result.stdout)
+                self.assertEqual({p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}, before)
+                path.unlink()
+                if path.parent.name == "more refs":
+                    path.parent.rmdir()
+        self.assert_current()
+
+    def test_ordinary_capitalized_word_is_not_mistaken_for_a_folder(self):
+        skill = self.shared / ".claude/skills/team-mule-guardrails/SKILL.md"
+        skill.write_text(skill.read_text(encoding="utf-8") + "\n## References\n\nReferences hold the detail.\n", encoding="utf-8")
+        self.assertEqual(self.build().returncode, 0)
+        self.assert_current()
 
     def test_symbolic_links_are_refused_before_anything_is_written(self):
         outside = self.root / "outside"
@@ -325,7 +351,6 @@ class BuildTests(unittest.TestCase):
         before = {p: p.read_bytes() for p in self.github.rglob("*") if p.is_file()}
         rules = self.shared / "CLAUDE.md"
         original = rules.read_text(encoding="utf-8")
-        (self.shared / ".github/mule/notes(v2).md").write_text("Notes\n", encoding="utf-8")
         links = (
             '[Profile](<.github/mule/team-profile.md> "Project facts")',
             "[Profile](<.github/mule/team-profile.md>)",

@@ -215,7 +215,7 @@ You still review everything an assistant produces. These rules reduce common mis
 python3 scripts/build.py
 ```
 
-Never edit `overlay/github/` by hand; the next build overwrites it. When a rule refers to another installed file, write it as a Markdown link, not as plain text or a code span: the generator converts links to the other layout's paths, and stops if a `.claude/` path or `CLAUDE.md` would be left behind in the generated files. Open a pull request with the change and its source: a MuleSoft documentation page, or a DataWeave CLI test you ran. Add the source to `docs/sources.md`. Run the checks before pushing:
+Never edit `overlay/github/` by hand; the next build overwrites it. When a rule refers to another installed file, write it as a Markdown link, not as plain text or a code span: the generator converts links to the other layout's paths, and stops if a path to another installed file would be left behind unconverted. For the same reason, file and folder names in `overlay/` may use only letters, digits, `.`, `_` and `-`. Open a pull request with the change and its source: a MuleSoft documentation page, or a DataWeave CLI test you ran. Add the source to `docs/sources.md`. Run the checks before pushing:
 
 ```sh
 python3 scripts/check.py
