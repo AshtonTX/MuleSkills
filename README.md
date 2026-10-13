@@ -56,8 +56,8 @@ Not every Copilot client loads every file. According to GitHub's documentation (
 |---|---|---|
 | VS Code, Copilot Chat | Repository instructions, path-specific instructions; skills in agent mode. Files a rule links to are not added unless `chat.includeReferencedInstructions` is on (it is off by default) | In agent mode, nothing extra: the agent can open the reference files. In other chat modes, turn that setting on or attach the reference files your change needs |
 | GitHub Copilot CLI and GitHub Copilot app (desktop) | Tested 13 October 2026 (CLI 1.0.96, macOS): repository instructions on every request; path-specific files are listed for the model, which opens the matching ones itself; skills | Use a capable model; see the paragraph below the table |
-| Eclipse, Copilot Chat | Repository instructions only | Attach the relevant `instructions/` file, the reference files it names for your change, and `mule/team-profile.md` |
-| Anypoint Studio | Installed extension compatibility and instruction loading unverified | Verify the extension and activation; attach the relevant guidance manually, including the reference files it names for your change |
+| Eclipse, Copilot Chat | Repository instructions only | Attach every `instructions/` file that matches the file you are working on (a Mule or MUnit XML file also matches the DataWeave rules), the reference files they name for your change, and `mule/team-profile.md` |
+| Anypoint Studio | Installed extension compatibility and instruction loading unverified | Verify the extension and activation; attach the guidance manually: every matching `instructions/` file, including the DataWeave rules for Mule or MUnit XML, and the reference files they name for your change |
 | Any other client | Not established | Check that client's documentation; don't assume VS Code features |
 
 **Copilot CLI and the desktop app do not inject path-specific files.** They give the model a table of patterns, file paths and descriptions, and the model opens the files that match. Three things follow:
@@ -146,7 +146,7 @@ Review the diff like any other change and merge it with the team's normal proces
 
 ## Day-to-day use
 
-Work as usual after verifying activation in your client. VS Code supports automatic repository and path-specific instructions; use the desktop app's verified settings or the fallback above. In Anypoint Studio or Eclipse, attach the matching `instructions/` file and `mule/team-profile.md` to your request.
+Work as usual after verifying activation in your client. VS Code supports automatic repository and path-specific instructions; use the desktop app's verified settings or the fallback above. In Anypoint Studio or Eclipse, attach every matching `instructions/` file and `mule/team-profile.md` to your request. A Mule or MUnit XML file matches two: its own rules and the DataWeave rules.
 
 The rule files point to reference files for situational detail: operators, output formats and performance for DataWeave; connectors and deployment targets for Mule XML. A client that can open files reads them when needed. Where you attach files by hand, attach the references your change touches too, or the rules in them will not apply.
 

@@ -7,7 +7,7 @@ description: "Mule flow and configuration XML rules: event and error handling, c
 
 Follow the project's existing structure and conventions first. Links below are Mule 4.9 examples; use documentation for the project's runtime.
 
-Flow files embed DataWeave in Transform Message scripts and `#[...]` expressions. Before reading or changing any of it, also read [the DataWeave rules](dataweave.instructions.md).
+Flow files embed DataWeave in Transform Message scripts and `#[...]` expressions. Before reading or changing any of it, also read [the DataWeave rules](dataweave.instructions.md). If you cannot open files yourself, ask for that file to be attached first.
 
 Two reference files hold situational rules. Read the one that applies before making that change. If you cannot open files yourself, say which of them the change needs and ask for it to be attached before making that change.
 
