@@ -16,6 +16,8 @@ jobs:
         run: bash -n scripts/install.sh
       - name: Check guardrail files
         run: python3 scripts/check.py
+      - name: Check that the generated layout is current
+        run: python3 scripts/build.py --check
       - name: Test installer and checker
         run: python3 -m unittest discover -s tests -v
 
