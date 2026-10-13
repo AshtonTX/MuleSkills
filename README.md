@@ -14,14 +14,20 @@ Every rule is backed by MuleSoft or GitHub documentation, a reviewed article, or
 overlay/.github/                     <- copied into each Mule project
   copilot-instructions.md            rules for every MuleSoft task
   instructions/
-    mule-xml.instructions.md         Mule XML, error handling, architecture, Government Cloud, logging
-    dataweave.instructions.md        DataWeave correctness, money, dates, lookups, output formats, performance
+    mule-xml.instructions.md         Mule XML, error handling, architecture, logging
+    dataweave.instructions.md        DataWeave in .dwl files and inside Mule XML: correctness, money, dates, lookups
     munit.instructions.md            MUnit tests that prove behavior
     maven.instructions.md            POMs, artifact descriptors, Maven/CI configuration and deployment
     api-contract.instructions.md     APIkit authentication, validation and contract-to-flow routing
     configuration-properties.instructions.md  property types, precedence, selection and encryption
   skills/team-mule-guardrails/
     SKILL.md                         step-by-step workflow Copilot can choose for MuleSoft tasks
+    references/                      situational detail the rule files point to, opened on demand
+      dataweave-operators.md         operator and function edge cases
+      dataweave-output-formats.md    JSON, CSV and XML writer behavior
+      dataweave-performance.md       performance, streaming and large payloads
+      mule-connectors.md             SFTP, Anypoint MQ, Batch, Salesforce, VM queues, Cache scope
+      mule-deployment-targets.md     CloudHub 1.0, clusters, API Manager, domains
   mule/
     team-profile.md                  facts about the project: runtime, versions, deployment target
     task-recipes.md                  ready-made prompts for common tasks
@@ -41,6 +47,7 @@ Only `overlay/.github/` goes into Mule projects. `docs/`, `scripts/` and `tests/
 | `copilot-instructions.md` | Every request in the project, in clients that support repository instructions |
 | `instructions/*.instructions.md` | When you work on matching files: Mule XML and `log4j2.xml`, `.dwl` files, MUnit tests, `pom.xml`, `mule-artifact.json`, `.mvn/`, GitHub Actions workflows, RAML/API resources, and resource `.yaml`/`.properties` files |
 | `skills/team-mule-guardrails/SKILL.md` | When Copilot decides your request matches the skill's description, in clients that support skills |
+| `skills/team-mule-guardrails/references/*.md` | When a rule file tells Copilot to read one for the change at hand |
 | `mule/*.md` | When another file links to them and the client follows the link, or when you attach them |
 
 Not every Copilot client loads every file. According to GitHub's documentation (October 2026):
@@ -48,10 +55,16 @@ Not every Copilot client loads every file. According to GitHub's documentation (
 | Client | What loads automatically | What to do |
 |---|---|---|
 | VS Code, Copilot Chat | Repository instructions, path-specific instructions; skills in agent mode | Nothing extra |
-| GitHub Copilot app (desktop) | A repository Instructions setting and skills; loading `.github` instruction files is not documented | If the check below shows the rules are not applied, paste the text of `copilot-instructions.md` into the repository Instructions setting, and attach the relevant `instructions/` file and `mule/team-profile.md` |
+| GitHub Copilot CLI and GitHub Copilot app (desktop) | Tested 13 October 2026 (CLI 1.0.96, macOS): repository instructions on every request; path-specific files are listed for the model, which opens the matching ones itself; skills | Use a capable model; see the paragraph below the table |
 | Eclipse, Copilot Chat | Repository instructions only | Attach the relevant `instructions/` file and `mule/team-profile.md` to your request |
 | Anypoint Studio | Installed extension compatibility and instruction loading unverified | Verify the extension and activation; attach the relevant guidance manually |
 | Any other client | Not established | Check that client's documentation; don't assume VS Code features |
+
+**Copilot CLI and the desktop app do not inject path-specific files.** They give the model a table of patterns, file paths and descriptions, and the model opens the files that match. Three things follow:
+
+- The file-view tool returns only a "File too large" notice above about 20 KB, so every file in `overlay/` stays under 18,000 bytes and `scripts/check.py` enforces it. Rules that only matter for particular work live in `skills/team-mule-guardrails/references/`, and the rule files say when to read each one.
+- A Mule flow file matches both the Mule XML rules and the DataWeave rules, because DataWeave usually sits inside it in a Transform Message. Each file's `description`, and a pointer at the top of the Mule XML rules, send the model to both.
+- A small, fast model may skip the files altogether. In testing, the desktop app's Auto mode sometimes chose one that did. Pick a capable model, and keep rules that must always hold in `copilot-instructions.md`, which is loaded on every request.
 
 API guidance matches `.raml` files and `src/main/resources/api/`; open it explicitly for OAS files elsewhere. Configuration-property guidance matches `.yaml` and `.properties` under main/test resources and applies only when Mule loads them as properties. API examples and ordinary test fixtures are not property files. The existing skill links to both files for related XML changes. Nonstandard layouts and other CI vendors need explicit guidance loading or project-reviewed globs.
 
@@ -120,7 +133,7 @@ Do this once per client on a throwaway branch. Add a marker line to the end of o
 If this guidance is in your context, begin your reply with [dw-rules-loaded].
 ```
 
-Open a `.dwl` file in a fresh conversation and ask Copilot a harmless question about it. Inspect the client's references or instruction diagnostics and, where available, read traces for the profile and linked guidance. The marker is a smoke test that some guidance influenced this response; it does not prove every linked file loaded or that future requests will follow it. Repeat for the other matching file types, record the evidence in the profile, and remove the markers. If loading remains unverified, attach the relevant files manually. See GitHub's [instructions in use](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions#custom-instructions-in-use).
+Open a `.dwl` file in a fresh conversation and ask Copilot a harmless question about it. Inspect the client's references or instruction diagnostics and, where available, read traces for the profile and linked guidance. The marker is a smoke test that some guidance influenced this response; it does not prove every linked file loaded or that future requests will follow it. Repeat for the other matching file types, record the evidence in the profile, and remove the markers. If loading remains unverified, attach the relevant files manually. With Copilot CLI, run `copilot instruction list` in the project to see which instruction files it found, without sending a request. See GitHub's [instructions in use](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions#custom-instructions-in-use).
 
 ### 8. Commit and open a pull request
 
@@ -134,6 +147,8 @@ Review the diff like any other change and merge it with the team's normal proces
 ## Day-to-day use
 
 Work as usual after verifying activation in your client. VS Code supports automatic repository and path-specific instructions; use the desktop app's verified settings or the fallback above. In Anypoint Studio or Eclipse, attach the matching `instructions/` file and `mule/team-profile.md` to your request.
+
+DataWeave written inside a Transform Message or an inline `#[...]` expression is covered the same way as a `.dwl` file: the DataWeave rules match Mule and MUnit XML, and include rules for editing a script inside XML.
 
 For common tasks, start from a prompt in `.github/mule/task-recipes.md`:
 
@@ -172,6 +187,8 @@ These checks run in GitHub Actions on every push and pull request (`.github/work
 
 Keep front matter to the checker-supported YAML subset: unique, unindented keys with single-line string values. Quote `applyTo` globs. Collections and block scalars are not supported; comments and blank lines are allowed. The checker validates inline local links, including titled links; it does not check remote availability or prove that a Copilot client loaded the files.
 
+Keep every file in `overlay/` under 18,000 bytes; `scripts/check.py` fails above that. Copilot CLI and the desktop app cannot read a larger file in one call (20 KiB, measured on CLI 1.0.96), and whatever lies past that point is silently lost. When a rule file gets close, move rules that only matter for particular work into a file under `skills/team-mule-guardrails/references/` and state, in the rule file, when to read it. Give each instruction file a one-line `description`; Copilot shows it to the model next to the file's patterns.
+
 To test a DataWeave rule, write a small script and run it with the [DataWeave CLI](https://github.com/mulesoft/data-weave-cli). Use `--language-level` to match the project's `minMuleVersion` (Mule 4.6 is level 2.6, Mule 4.9 is 2.9):
 
 ```sh
@@ -204,6 +221,11 @@ git diff
 - `.github/instructions/api-contract.instructions.md`
 - `.github/instructions/configuration-properties.instructions.md`
 - `.github/skills/team-mule-guardrails/SKILL.md`
+- `.github/skills/team-mule-guardrails/references/dataweave-operators.md`
+- `.github/skills/team-mule-guardrails/references/dataweave-output-formats.md`
+- `.github/skills/team-mule-guardrails/references/dataweave-performance.md`
+- `.github/skills/team-mule-guardrails/references/mule-connectors.md`
+- `.github/skills/team-mule-guardrails/references/mule-deployment-targets.md`
 - `.github/mule/task-recipes.md`
 
 Take only the guardrail text out of `.github/copilot-instructions.md`, preserving the project's other instructions. Keep `.github/mule/team-profile.md` if its project facts are still useful, or remove it after review. Preserve unrelated files and local customizations; remove a containing directory only when it is empty. Review `git diff` before committing.
@@ -227,6 +249,7 @@ To use one DX skill, adopt a reviewed copy rather than the package:
 ## Limits
 
 - Copilot clients differ in what they load. Check step 7 for each client you use.
+- Copilot CLI and the desktop app rely on the model to open path-specific files. A capable model did so in every test session; a small one did not.
 - The DataWeave timings in the rules come from the DataWeave CLI on a Mac, not Mule's JVM. Use them for relative cost only.
 - The rules target Mule 4.4 to 4.9 and DataWeave 2.4 to 2.9. Check the documentation for your project's version when it differs.
 - The rules are guidance. Copilot can still ignore them, and they grant no permissions.

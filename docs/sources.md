@@ -152,6 +152,45 @@ These procedures extend the existing recipes and skill routing. A separate diagn
 
 Open project questions are client/extension activation, pinned connector/parser metadata (including APIkit strict-validation attributes), actual deployment overrides, Java/runtime combinations and the native-CLI versus Mule compatibility-property differences already recorded above. No Mule application, MUnit suite, Salesforce/SFTP/MQ service, Government Cloud deployment or client activation probe was executed in this repository.
 
+## Rule file size and DataWeave inside Mule XML: 13 October 2026
+
+The team writes most DataWeave inline, in Transform Message components, so a flow file is where both the Mule XML rules and the DataWeave rules have to apply. Testing how Copilot loads those files found two defects in the overlay itself and led to this restructure. No Mule application was run.
+
+### What was measured
+
+Copilot CLI 1.0.96 and the GitHub Copilot desktop app on macOS, using scratch projects that contain one flow with an inline Transform Message. Session event logs were read from disk, so tool calls and returned text are observed, not inferred.
+
+| Observation | Evidence |
+|---|---|
+| Path-specific instruction files are listed, not injected | The system message carries a table of pattern, file path and description, with an instruction to open matching files with the `view` tool before changing code. By design since CLI 1.0.26 ([changelog](https://github.com/github/copilot-cli/blob/main/changelog.md)); the inconsistency this causes is reported in [github/copilot-cli#2909](https://github.com/github/copilot-cli/issues/2909). |
+| A file above 20 KiB cannot be read in one call | Plain `view` returned the whole file at 19,907 bytes and only "File too large to read at once" at 20,486 bytes. A ranged read returned about 20,600 characters and dropped the rest. `dataweave.instructions.md` was 21,517 bytes and `mule-xml.instructions.md` 20,405. |
+| With two matching files, one was often skipped | Editing the inline script, both rule files were opened in 2 of 4 sessions with short test rules and 3 of 4 with the real rules; the Mule XML file was always the one opened. |
+| A description on each file, or a pointer from one file to the other, fixed that | Both files opened in 4 of 4 sessions for each variant. |
+| After this change | With the overlay installed by `scripts/install.sh`: both files opened and read whole in 4 of 4 edit sessions, with an end-of-file test marker followed each time; a request to change the output format also opened `dataweave-output-formats.md` in 2 of 2 sessions. Model: `gpt-5.6-luna`, chosen by Auto. |
+| A smaller model skipped the files | In the desktop app, Auto chose `mai-code-1.1-flash` for two of three sessions. In three requests that matched a path-specific file it opened none. Repository-wide instructions were applied in every session. |
+
+### What changed
+
+- Both large files were split. Every bullet was moved verbatim; none was reworded. `dataweave.instructions.md` is now 16,042 bytes and `mule-xml.instructions.md` 14,481. The situational parts are in five files under `overlay/.github/skills/team-mule-guardrails/references/`: operator and function behavior, output formats, performance, connector and scope rules, and deployment target rules. Each rule file states when to read each reference.
+- The one edited bullet is the Mule XML pointer to the DataWeave guidance, which moved to the top of that file as its own paragraph.
+- Each instruction file has a `description`, which Copilot shows to the model beside the file's patterns.
+- `scripts/check.py` rejects any overlay Markdown file above 18,000 bytes, leaving a margin below the measured limit.
+
+### New rules for DataWeave inside Mule XML
+
+| Rule | Source |
+|---|---|
+| Scripts are inline in CDATA or external through `resource`; `ee:message` holds `ee:set-payload` and `ee:set-attributes`, `ee:variables` holds `ee:set-variable`; `resource` is resolved statically | [Transform Message XML reference at `1dbacea`](https://github.com/mulesoft/docs-mule-runtime/blob/1dbacea6cf015190f11c09eea0ac583c9b445291/modules/ROOT/pages/transform-dataweave-xml-reference.adoc). Inline is the default: [moving transformations to a file](https://github.com/mulesoft/docs-mule-runtime/blob/1dbacea6cf015190f11c09eea0ac583c9b445291/modules/ROOT/pages/transform-move-transformations-separate-file-studio-task.adoc). Keeping a script where the project has it is this overlay's own convention rule. |
+| `<` and `&` are literal inside CDATA and must be escaped in attribute values, as must the delimiting quote; `]]>` ends a CDATA section | [XML 1.0, character data and markup](https://www.w3.org/TR/xml/#syntax), [CDATA sections](https://www.w3.org/TR/xml/#sec-cdata-sect) and the `AttValue` production. [inline_syntax.dwl](../tests/dataweave/inline_syntax.dwl) records that valid DataWeave can contain `]]>` and that single-quoted strings behave as double-quoted ones. |
+| Inline expressions take a header only on one line; the default output follows the inputs | [Language introduction at `327259b`](https://github.com/mulesoft/docs-dataweave/blob/327259b873f5ab18ee0b2eae3f42b7303ae5e79d/modules/ROOT/pages/dataweave-language-introduction.adoc), sections "Including Headers in Inline DataWeave Scripts" and the `output` directive default. |
+| Mule's predefined variables and `p()` do not exist in the standalone CLI | [Predefined variables at `327259b`](https://github.com/mulesoft/docs-dataweave/blob/327259b873f5ab18ee0b2eae3f42b7303ae5e79d/modules/ROOT/pages/dataweave-variables-context.adoc) and the [`dw::Mule` module](https://github.com/mulesoft/docs-dataweave/blob/327259b873f5ab18ee0b2eae3f42b7303ae5e79d/modules/ROOT/pages/dw-mule.adoc). [mule_only_variable.dwl](../tests/dataweave/mule_only_variable.dwl) and [mule_only_function.dwl](../tests/dataweave/mule_only_function.dwl) retain the unresolved-reference errors. |
+
+The fixture command now reports **72 passed, 0 failed** (twelve fixtures at six language levels) on CLI 2.12.1 / runtime 2.12.2 locally.
+
+### Not established
+
+Windows, other models, and Copilot clients other than the CLI and desktop app were not tested. Claude Code does not read `.github/` instruction files at all; serving it needs a separate layout decision and is not part of this change.
+
 ## Government Cloud and individual remote capabilities
 
 Distinguish documented product support, implementation routing, and organizational approval. Local files/manual prompts can still reach a hosted Copilot model; they are not proof of offline operation. Code, API specifications, queries, asset names, organizational IDs and other metadata may be sensitive. Keep unapproved material out of public searches as well as tool calls.
