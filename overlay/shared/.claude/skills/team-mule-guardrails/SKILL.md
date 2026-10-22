@@ -8,7 +8,7 @@ description: Apply project-specific version, Mule XML error-handling, DataWeave,
 Use this workflow for MuleSoft application work. It adds local project constraints to the selected upstream expertise; it does not install or invoke any upstream tool automatically.
 
 1. Read [the team profile](../../../.github/mule/team-profile.md). Inspect the task's contract, neighboring flows/tests, POM inheritance/properties, artifact descriptor, and CI instructions. Report missing facts only when they affect the change; continue safe analysis meanwhile.
-2. Load only the relevant guidance:
+2. Read the files you will change first; many tools then add their matching rules automatically. Open a rule file below only if it is relevant and still not in your context, and never open one twice:
    - Mule configuration: [Mule XML](../../rules/mule-xml.md)
    - Mapping or embedded transformations: [DataWeave](../../rules/dataweave.md)
    - Test creation or repair: [MUnit](../../rules/munit.md)
