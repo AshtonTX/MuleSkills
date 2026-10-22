@@ -28,14 +28,14 @@ Teammates then clone it from there, as in the [quick start](../README.md#quick-s
 
 ### 3. Fill in the team-wide facts once
 
-Edit [`overlay/shared/.github/mule/team-profile.md`](../overlay/shared/.github/mule/team-profile.md) in this repository and fill the rows that are the same for every project:
+Edit [`overlay/shared/.github/mule/team-profile.md`](../overlay/shared/.github/mule/team-profile.md) in this repository and fill the Team section, which is the same for every project:
 
 - Assistant client and version, and whether your organization approved it
 - Government Cloud or Government Cloud Plus, and whether FIPS 140-3 mode is required
 - Deployment target (CloudHub 1.0 or hybrid standalone runtimes), messaging, logging and API Manager setup
 - Shared Exchange assets, connector approval rules and architecture conventions
 
-Leave project-specific rows, such as Mule runtime, `minMuleVersion`, MUnit and connector versions, as `Unknown`; each project fills those. Run `python3 scripts/build.py`, then commit and push.
+Leave the Project section, such as Mule runtime, `minMuleVersion`, MUnit and connector versions, as `Unknown`; each project fills it. [`team-profile-guide.md`](../overlay/shared/.github/mule/team-profile-guide.md) says where to find each fact. Run `python3 scripts/build.py`, then commit and push.
 
 ### 4. Make sure no other MuleSoft skill can take over
 
@@ -72,9 +72,9 @@ On a Mac, Finder hides folders starting with a dot. Press Cmd+Shift+. to show `.
 
 ### 2. Fill in the project's facts
 
-Open `.github/mule/team-profile.md` in the project and fill the project rows from the project's own files: `pom.xml` and its parent, `mule-artifact.json`, and the CI configuration. The assistant can help:
+Open `.github/mule/team-profile.md` in the project and fill the Project section from the project's own files: `pom.xml` and its parent, `mule-artifact.json`, and the CI configuration. The assistant can help:
 
-> Inspect this project's POM, parent POM, mule-artifact.json and CI files, then fill in the project rows of .github/mule/team-profile.md with values and where you found them. Leave anything you can't find as Unknown.
+> Inspect this project's POM, parent POM, mule-artifact.json and CI files, then fill in the Project section of .github/mule/team-profile.md following .github/mule/team-profile-guide.md. Say where you found each value. Leave anything you can't find as Unknown.
 
 Check every value it writes. Never fill a value from a guess or a "latest version" example.
 
@@ -90,7 +90,7 @@ Do this once per client on a throwaway branch.
 If this guidance is in your context, begin your reply with [dw-rules-loaded].
 ```
 
-Open a `.dwl` file or a flow with a Transform Message in a fresh conversation and ask a harmless question about it. Inspect the client's references or instruction diagnostics and, where available, read traces for the profile and linked guidance. The marker is a smoke test that some guidance influenced this response; it does not prove every linked file loaded or that future requests will follow it. Repeat for the other matching file types, record the evidence in the profile, and remove the markers. If loading remains unverified, attach the relevant files manually. See GitHub's [instructions in use](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions#custom-instructions-in-use).
+Open a `.dwl` file or a flow with a Transform Message in a fresh conversation and ask a harmless question about it. Inspect the client's references or instruction diagnostics and, where available, read traces for the profile and linked guidance. The marker is a smoke test that some guidance influenced this response; it does not prove every linked file loaded or that future requests will follow it. Repeat for the other matching file types, summarize the outcome on the profile's Loading check line (the guide's [loading check](../overlay/shared/.github/mule/team-profile-guide.md#loading-check-complete-on-each-client-the-team-uses) lists every probe), and remove the markers. If loading remains unverified, attach the relevant files manually. See GitHub's [instructions in use](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions#custom-instructions-in-use).
 
 ### 4. Commit and open a pull request
 
@@ -137,6 +137,7 @@ Review the installed files on a branch. Remove only these shared files if they s
 - `.claude/skills/team-mule-guardrails/references/mule-connectors.md`
 - `.claude/skills/team-mule-guardrails/references/mule-deployment-targets.md`
 - `.github/mule/task-recipes.md`
+- `.github/mule/team-profile-guide.md`
 
 In the `github` layout the same files sit under `.github/instructions/` (named `*.instructions.md`) and `.github/skills/`.
 

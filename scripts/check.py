@@ -57,7 +57,11 @@ SKILL_FILES = [
     "team-mule-guardrails/references/mule-connectors.md",
     "team-mule-guardrails/references/mule-deployment-targets.md",
 ]
-PROJECT_FILES = [".github/mule/team-profile.md", ".github/mule/task-recipes.md"]
+PROJECT_FILES = [
+    ".github/mule/team-profile.md",
+    ".github/mule/team-profile-guide.md",
+    ".github/mule/task-recipes.md",
+]
 # Each layout: where scoped rules live, how their files are named, the
 # front-matter key that scopes them, where skills live, and the files it must have.
 LAYOUTS = {

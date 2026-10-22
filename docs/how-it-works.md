@@ -31,6 +31,7 @@ overlay/shared/                      <- copied into each Mule project (the defau
       mule-deployment-targets.md     CloudHub 1.0, clusters, API Manager, domains
   .github/mule/
     team-profile.md                  facts about the project: runtime, versions, deployment target
+    team-profile-guide.md            how to fill in the profile; opened only when someone does
     task-recipes.md                  ready-made prompts for common tasks
 overlay/github/                      the same rules in Copilot's own locations; generated, do not edit
 docs/                                these pages and the sources behind each rule (stay in this repository)
