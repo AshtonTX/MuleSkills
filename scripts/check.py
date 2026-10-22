@@ -51,6 +51,7 @@ MAX_OVERLAY_FILE_BYTES = 18_000
 RULES = ["api-contract", "configuration-properties", "dataweave", "maven", "mule-xml", "munit"]
 SKILL_FILES = [
     "team-mule-guardrails/SKILL.md",
+    "team-mule-guardrails/references/dataweave-correctness.md",
     "team-mule-guardrails/references/dataweave-operators.md",
     "team-mule-guardrails/references/dataweave-output-formats.md",
     "team-mule-guardrails/references/dataweave-performance.md",

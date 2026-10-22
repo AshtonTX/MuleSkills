@@ -24,6 +24,7 @@ overlay/shared/                      <- copied into each Mule project (the defau
   .claude/skills/team-mule-guardrails/
     SKILL.md                         step-by-step workflow the assistant can choose for MuleSoft tasks
     references/                      situational detail the rule files point to, opened on demand
+      dataweave-correctness.md       values, numbers, dates, selectors, joins and sorting
       dataweave-operators.md         operator and function edge cases
       dataweave-output-formats.md    CSV and XML writer behavior
       dataweave-performance.md       performance, streaming and large payloads

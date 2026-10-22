@@ -131,6 +131,7 @@ Review the installed files on a branch. Remove only these shared files if they s
 - `.claude/rules/api-contract.md`
 - `.claude/rules/configuration-properties.md`
 - `.claude/skills/team-mule-guardrails/SKILL.md`
+- `.claude/skills/team-mule-guardrails/references/dataweave-correctness.md`
 - `.claude/skills/team-mule-guardrails/references/dataweave-operators.md`
 - `.claude/skills/team-mule-guardrails/references/dataweave-output-formats.md`
 - `.claude/skills/team-mule-guardrails/references/dataweave-performance.md`
