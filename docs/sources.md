@@ -342,11 +342,11 @@ The DataWeave rules were tested against the mistakes they target. Runs used Clau
 
 - 31 tasks, each a one-sentence request against a small Mule project (`minMuleVersion` 4.6.0) whose flow holds one Transform Message. Eight tasks target rules from the earlier file. The other 23 each target one remaining rule that an output check can decide.
 - Each result was graded by running the edited script with the DataWeave CLI 2.12.1 (runtime 2.12.2, language level 2.6) on edge-case payloads and comparing the output. Rules about placement (inline scripts, other Transform outputs, module folders, `log()`) also had structural checks. Before any model run, every checker was validated against known-good and known-bad scripts (78 cases).
-- Variants compared: no rules installed, the rules before the rebuild, and the rebuilt rules.
-- Runs:
-  - 10 per task, model and variant (1,400 runs).
-  - 354 runs of the rebuilt rules: 10 on the 12 tasks the rebuild targets, 3 on the rest.
-  - 80 runs of the final refinement.
+- Variants and runs, each 10 per task and model unless stated (1,834 runs in all):
+  - No rules and the rules before the rebuild (commit `30d0e1c`), on all 31 tasks: 620 runs each.
+  - The rules before this pull request (commit `61c1290`), on the first 8 tasks only: 160 runs.
+  - The rebuilt rules: 354 runs, 10 on the 12 tasks the rebuild targets and 3 on the rest.
+  - The final refinement, on the 4 tasks that still failed: 80 runs.
 
 #### Results
 
@@ -374,12 +374,12 @@ About 20 rules made no difference on either model. They moved unchanged:
 - the `deferred`, `log()`, `application/dw` and memory-property rules to the performance reference;
 - the JSON writer rule to the output-formats reference.
 
-Only a few duplicated examples and links were dropped.
+The sentences an earlier step had removed for cases both models already handled (the `reduce` accumulator, strict date parsing and fixed decimals) are back in the correctness reference word for word. Only a few duplicated examples and links were dropped.
 
 **Cost.** The rules roughly triple the cost of a DataWeave task: Sonnet went from $0.038 to $0.107 per run, and Opus from $0.083 to $0.255.
 
 - **Main cause:** the assistant takes more steps with the rules (Sonnet 3.3 → 7.4, Opus 3.4 → 9.8). It reads the profile, POM and references and checks its work, and each step re-sends the conversation.
-- **The smaller file:** halving the always-loaded DataWeave rules, from 16,727 to 8,401 bytes, cut about 1,000 fresh input tokens per task. That is roughly 1% of the cost.
+- **The smaller file:** halving the always-loaded DataWeave rules, from 16,727 to 8,401 bytes (8,572 after two short sentences were restored), cut about 1,000 fresh input tokens per task. That is roughly 1% of the cost.
 
 #### New rules and their sources
 
