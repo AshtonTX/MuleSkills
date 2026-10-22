@@ -8,6 +8,34 @@ You copy a few files into each Mule project: `CLAUDE.md`, a `.claude` folder and
 
 Every rule is backed by MuleSoft or GitHub documentation, a reviewed article, or a test run on the DataWeave CLI. [docs/sources.md](docs/sources.md) records which.
 
+## Quick start
+
+For a teammate adding the rules to a Mule project, once this repository is in your work GitHub ([one-time team setup](#one-time-team-setup)). You need Git; on Windows, run the commands in Git Bash, which comes with Git for Windows. You also need Copilot CLI 1.0.89 or later, or Claude Code.
+
+1. Clone this repository once:
+
+   ```sh
+   git clone https://github.com/<your-org>/MuleSkills.git ~/MuleSkills
+   ```
+
+2. In the Mule project, on a new branch, install the rules:
+
+   ```sh
+   git switch -c chore/mule-guardrails
+   ~/MuleSkills/scripts/install.sh .
+   ```
+
+3. Fill in the project rows of `.github/mule/team-profile.md` ([details](#2-fill-in-the-projects-facts)).
+4. Check that your assistant sees the rules: `copilot instruction list` should list `CLAUDE.md` and six `.claude/rules` files; in Claude Code, run `/memory`.
+5. Commit and open a pull request in the project:
+
+   ```sh
+   git add CLAUDE.md .claude .github/mule
+   git commit -m "Add MuleSoft guardrails"
+   ```
+
+The rest of this README explains each step and the choices behind it.
+
 ## What's in this repository
 
 ```
@@ -85,7 +113,9 @@ Other clients, according to their documentation (October 2026, not tested here):
 
 API guidance matches `.raml` files and `src/main/resources/api/`; open it explicitly for OAS files elsewhere. Configuration-property guidance matches `.yaml` and `.properties` under main/test resources and applies only when Mule loads them as properties. API examples and ordinary test fixtures are not property files. The skill links to both files for related XML changes. Nonstandard layouts and other CI vendors need explicit guidance loading or project-reviewed globs.
 
-## Set it up at work
+## One-time team setup
+
+Done once, by whoever looks after this repository for the team.
 
 ### 1. Confirm you are allowed to
 
@@ -93,12 +123,14 @@ Your assistant sends the files you work on, and these rules, to a cloud model. C
 
 ### 2. Put this repository in your work GitHub
 
-Create an empty repository in your organization (for example `MuleSkills`, no README), then from this folder:
+Create an empty repository in your organization (for example `MuleSkills`, with no README), then, from your clone of this repository, point it there and push:
 
 ```sh
-git remote add origin https://github.com/<your-org>/MuleSkills.git
+git remote set-url origin https://github.com/<your-org>/MuleSkills.git
 git push -u origin main
 ```
+
+Teammates then clone it from there, as in the [quick start](#quick-start). If your organization allows GitHub Actions, the checks in `.github/workflows/check.yml` run on every push and pull request.
 
 ### 3. Fill in the team-wide facts once
 
@@ -117,7 +149,9 @@ Assistants select skills using the prompt and skill description. MuleSoft's offi
 
 `.github/skills`, `.claude/skills`, `.agents/skills` in the project, and `~/.claude/skills`, `~/.copilot/skills`, `~/.agents/skills` in your home folder.
 
-### 5. Add the guardrails to a Mule project
+## Add the guardrails to a Mule project
+
+### 1. Install the files
 
 Work on a new branch in the project.
 
@@ -125,7 +159,7 @@ Work on a new branch in the project.
 
 ```sh
 git switch -c chore/mule-guardrails
-/path/to/MuleSkills/scripts/install.sh .
+~/MuleSkills/scripts/install.sh .
 ```
 
 Add `--layout github` for the Copilot-only layout.
@@ -138,7 +172,7 @@ The script copies new files and never deletes anything. It checks all destinatio
 
 On a Mac, Finder hides folders starting with a dot. Press Cmd+Shift+. to show `.claude` and `.github`.
 
-### 6. Fill in the project's facts
+### 2. Fill in the project's facts
 
 Open `.github/mule/team-profile.md` in the project and fill the project rows from the project's own files: `pom.xml` and its parent, `mule-artifact.json`, and the CI configuration. The assistant can help:
 
@@ -146,7 +180,7 @@ Open `.github/mule/team-profile.md` in the project and fill the project rows fro
 
 Check every value it writes. Never fill a value from a guess or a "latest version" example.
 
-### 7. Check that your assistant actually loads the files
+### 3. Check that your assistant actually loads the files
 
 Do this once per client on a throwaway branch.
 
@@ -160,7 +194,7 @@ If this guidance is in your context, begin your reply with [dw-rules-loaded].
 
 Open a `.dwl` file or a flow with a Transform Message in a fresh conversation and ask a harmless question about it. Inspect the client's references or instruction diagnostics and, where available, read traces for the profile and linked guidance. The marker is a smoke test that some guidance influenced this response; it does not prove every linked file loaded or that future requests will follow it. Repeat for the other matching file types, record the evidence in the profile, and remove the markers. If loading remains unverified, attach the relevant files manually. See GitHub's [instructions in use](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions#custom-instructions-in-use).
 
-### 8. Commit and open a pull request
+### 4. Commit and open a pull request
 
 ```sh
 git add CLAUDE.md .claude .github/mule
@@ -244,10 +278,11 @@ python3 scripts/check_dataweave.py --dw /path/to/dw
 
 The runner checks language levels 2.4–2.9 by default and fails if the CLI is missing or a result differs. It compares JSON numbers as exact decimals and keeps Boolean and numeric values distinct. Add a `.dwl` fixture with either a neighboring `.json` expected result or an `.error.txt` expected failure diagnostic. Use `--language-level 2.9` for a targeted run. CI downloads CLI 2.12.3 (runtime 2.12.2), verifies its SHA-256 checksum, and runs the same fixtures. A language-level flag does not install an older engine or reproduce Mule's JVM and system properties. These are native CLI regression checks; validate runtime-sensitive behavior in the target Mule application as well.
 
-**Update a project** on a branch:
+**Update a project** on a branch. Pull the latest rules first, then install over the old ones:
 
 ```sh
-/path/to/MuleSkills/scripts/install.sh . --update
+git -C ~/MuleSkills pull
+~/MuleSkills/scripts/install.sh . --update
 git diff
 ```
 
@@ -287,11 +322,11 @@ To use one DX skill, adopt a reviewed copy rather than the package:
 2. Copy its folder into `overlay/shared/.claude/skills/dx-<name>/` and record the commit.
 3. Set the frontmatter `name` to `dx-<name>`, rewrite the description to remove first/only-action claims, and remove `allowed-tools`. Keep frontmatter within this repository's supported single-line string format; move nested metadata into the body. Pin fetched versions and remove unavailable or unapproved steps.
 4. Include the upstream Apache-2.0 license and applicable notices. Note modifications immediately after the frontmatter in `SKILL.md`.
-5. Record the decision in the team profile's upstream section, run `scripts/build.py` and `scripts/check.py`, and repeat the loading check from step 7 to confirm a DataWeave request still selects `team-mule-guardrails`.
+5. Record the decision in the team profile's upstream section, run `scripts/build.py` and `scripts/check.py`, and repeat the [loading check](#3-check-that-your-assistant-actually-loads-the-files) to confirm a DataWeave request still selects `team-mule-guardrails`.
 
 ## Limits
 
-- Clients differ in what they load. Check step 7 for each client you use.
+- Clients differ in what they load. Run the [loading check](#3-check-that-your-assistant-actually-loads-the-files) for each client you use.
 - Copilot CLI and the desktop app rely on the model to open the rule files. A capable model did so in every test session; a small one did not. Claude Code adds them itself.
 - The loading tests ran on macOS. Windows was not tested.
 - The DataWeave timings in the rules come from the DataWeave CLI on a Mac, not Mule's JVM. Use them for relative cost only.
@@ -302,10 +337,10 @@ To use one DX skill, adopt a reviewed copy rather than the package:
 
 | Problem | Fix |
 |---|---|
-| The assistant ignores the rules | Run the check in step 7, then use the workaround for your client |
+| The assistant ignores the rules | Run the [loading check](#3-check-that-your-assistant-actually-loads-the-files), then use the workaround for your client |
 | Copilot CLI does not list the `.claude/rules` files | Update it: `.claude/rules` needs version 1.0.89 or later. Or install the `github` layout |
-| The installer says the project already has rule files from the other layout | Keep that layout with `--layout`, or delete the files it lists and run it again. See step 5 |
-| The assistant uses a different MuleSoft workflow, looks up "latest" versions or insists on `mvn clean package` | Another MuleSoft skill was chosen. See step 4 |
+| The installer says the project already has rule files from the other layout | Keep that layout with `--layout`, or delete the files it lists and run it again. See [installing](#1-install-the-files) |
+| The assistant uses a different MuleSoft workflow, looks up "latest" versions or insists on `mvn clean package` | Another MuleSoft skill was chosen. See [one-time team setup](#4-make-sure-no-other-mulesoft-skill-can-take-over) |
 | The assistant invents versions or upgrades dependencies | Fill in the project rows of `team-profile.md` |
 | The script says a file differs | Compare the project's file with the one under `overlay/shared/` and merge by hand, or run with `--update` for the shared rule files |
 | `scripts/build.py --check` fails | `overlay/github` is out of date. Run `python3 scripts/build.py` and commit the result |

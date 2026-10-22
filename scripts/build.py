@@ -91,23 +91,6 @@ def to_github(rel):
     raise ValueError(f"{rel}: no place for this path in the GitHub layout")
 
 
-def to_shared(rel):
-    """The inverse of to_github, used to bring GitHub-layout content back."""
-    parts = PurePosixPath(rel).parts
-    if parts == (".github", "copilot-instructions.md"):
-        return PurePosixPath("CLAUDE.md")
-    if parts[:2] == (".github", "instructions"):
-        rest = parts[2:]
-        if rest and rest[-1].endswith(".instructions.md"):
-            rest = rest[:-1] + (rest[-1][: -len(".instructions.md")] + ".md",)
-        return PurePosixPath(".claude", "rules", *rest)
-    if parts[:2] == (".github", "skills"):
-        return PurePosixPath(".claude", "skills", *parts[2:])
-    if parts[:2] == (".github", "mule"):
-        return PurePosixPath(*parts)
-    raise ValueError(f"{rel}: no place for this path in the shared layout")
-
-
 def is_rule(rel, rules_dir):
     return PurePosixPath(rel).parts[: len(rules_dir)] == rules_dir and str(rel).endswith(".md")
 

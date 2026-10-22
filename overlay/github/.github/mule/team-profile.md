@@ -4,7 +4,7 @@ This template records facts, not proposed version upgrades. Government Cloud is 
 
 | Fact | Current value | Evidence to record |
 |---|---|---|
-| Copilot product/version, mode, model/account | Unknown; desktop workflow confirmed | Client About/settings and organization approval |
+| AI assistant clients, versions and models | The team uses GitHub Copilot CLI, the GitHub Copilot desktop app and Claude Code; each developer's versions unknown | `copilot --version` (the default `shared` layout needs 1.0.89 or later), `claude --version`, the model selected (a small model chosen by Copilot's Auto mode skipped rule files in testing), and organization approval |
 | Repository, module, commit | Unknown | Working checkout and module POM |
 | Mule runtime patch and release channel | Unknown | Deployment configuration, CI and resolved POM |
 | `minMuleVersion` | Unknown | `mule-artifact.json`; distinguish declared minimum from deployed runtime |
@@ -47,7 +47,9 @@ Record each selected/excluded/adapted section, reason, owner and date. For the o
 
 Current decision: **not selected; no upstream workflow enabled by these guardrails**. Do not silently treat the proposed exceptions above as organizational approval.
 
-## Activation evidence: complete on the actual client
+## Activation evidence: complete on each client the team uses
+
+First list what the client found: `copilot instruction list` for Copilot CLI, `/memory` in Claude Code. Then run the probes.
 
 | Probe | Expected candidate context | Observed evidence / outcome |
 |---|---|---|
