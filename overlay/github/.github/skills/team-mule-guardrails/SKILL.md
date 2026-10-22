@@ -1,6 +1,6 @@
 ---
 name: team-mule-guardrails
-description: Apply project-specific version, Mule XML error-handling, DataWeave, MUnit, and government-environment checks when creating or reviewing MuleSoft application changes. Use with existing MuleSoft skills or on its own.
+description: Apply project-specific version, Mule XML error-handling, DataWeave, MUnit, and government-environment checks when creating or reviewing MuleSoft application changes. Use with existing MuleSoft skills or on its own. Not for questions or explanations.
 ---
 
 # Team Mule guardrails
