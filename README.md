@@ -28,9 +28,9 @@ You need Git, and Copilot CLI 1.0.89 or later, the Copilot desktop app, or Claud
    ~/MuleSkills/scripts/install.sh .
    ```
 
-3. Fill in the project rows of `.github/mule/team-profile.md`: runtime, versions, deployment target. The assistant can do a first pass:
+3. Fill in the Project section of `.github/mule/team-profile.md`: runtime, versions, deployment target. The assistant can do a first pass:
 
-   > Fill in the project rows of .github/mule/team-profile.md from this project's POM, parent POM, mule-artifact.json and CI files. Say where you found each value and leave anything you can't find as Unknown.
+   > Fill in the Project section of .github/mule/team-profile.md from this project's POM, parent POM, mule-artifact.json and CI files, following .github/mule/team-profile-guide.md. Say where you found each value and leave anything you can't find as Unknown.
 
    Check every value it writes.
 
@@ -53,6 +53,7 @@ Then work as usual. [Setup](docs/setup.md) covers Windows without Git Bash, olde
 | `.claude/rules/` | Rules for one kind of file each: Mule XML, DataWeave, MUnit, Maven, API contracts, configuration properties |
 | `.claude/skills/team-mule-guardrails/` | A step-by-step workflow for MuleSoft tasks, and reference files the rules open when a change needs them |
 | `.github/mule/team-profile.md` | This project's facts: runtime, versions, deployment target |
+| `.github/mule/team-profile-guide.md` | How to fill in the profile; opened only when you do |
 | `.github/mule/task-recipes.md` | Ready-made prompts for common tasks |
 
 ## Everyday use

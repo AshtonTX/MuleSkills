@@ -24,6 +24,7 @@ overlay/shared/                      <- copied into each Mule project (the defau
   .claude/skills/team-mule-guardrails/
     SKILL.md                         step-by-step workflow the assistant can choose for MuleSoft tasks
     references/                      situational detail the rule files point to, opened on demand
+      dataweave-correctness.md       values, numbers, dates, selectors, joins and sorting
       dataweave-operators.md         operator and function edge cases
       dataweave-output-formats.md    CSV and XML writer behavior
       dataweave-performance.md       performance, streaming and large payloads
@@ -31,6 +32,7 @@ overlay/shared/                      <- copied into each Mule project (the defau
       mule-deployment-targets.md     CloudHub 1.0, clusters, API Manager, domains
   .github/mule/
     team-profile.md                  facts about the project: runtime, versions, deployment target
+    team-profile-guide.md            how to fill in the profile; opened only when someone does
     task-recipes.md                  ready-made prompts for common tasks
 overlay/github/                      the same rules in Copilot's own locations; generated, do not edit
 docs/                                these pages and the sources behind each rule (stay in this repository)

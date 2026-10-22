@@ -333,3 +333,77 @@ Tested on macOS with Claude Code 2.1.296, Copilot CLI 1.0.96 and the Copilot des
 #### Not established
 
 Windows was not tested, and no PowerShell installer is included because none could be tested here. The Claude desktop app's Chat and Cowork tabs were not tested; its Code tab runs Claude Code. A small model chosen by the Copilot desktop app's Auto mode skipped scoped rule files in earlier sessions, and this layout does not change that.
+
+### DataWeave rule evaluation: 21–22 October 2026
+
+The DataWeave rules were tested against the mistakes they target. Runs used Claude Code 2.1.307 on Sonnet 5.5 and Opus 5.5 at the default `medium` effort, with user settings and MCP servers excluded.
+
+#### Method
+
+- 31 tasks, each a one-sentence request against a small Mule project (`minMuleVersion` 4.6.0) whose flow holds one Transform Message. Eight tasks target rules from the earlier file. The other 23 each target one remaining rule that an output check can decide.
+- Each result was graded by running the edited script with the DataWeave CLI 2.12.1 (runtime 2.12.2, language level 2.6) on edge-case payloads and comparing the output. Rules about placement (inline scripts, other Transform outputs, module folders, `log()`) also had structural checks. Before any model run, every checker was validated against known-good and known-bad scripts (78 cases).
+- Variants and runs, each 10 per task and model unless stated (1,834 runs in all):
+  - No rules and the rules before the rebuild (commit `30d0e1c`), on all 31 tasks: 620 runs each.
+  - The rules before this pull request (commit `61c1290`), on the first 8 tasks only: 160 runs.
+  - The rebuilt rules: 354 runs, 10 on the 12 tasks the rebuild targets and 3 on the rest.
+  - The final refinement, on the 4 tasks that still failed: 80 runs.
+
+#### Results
+
+| | Sonnet 5.5 | Opus 5.5 |
+|---|---|---|
+| No rules | 260/310 (84%) | 290/310 (94%) |
+| Rules before the rebuild | 298/310 (96%) | 304/310 (98%) |
+| Same task mix as the rebuild run: none / before / rebuilt | 129 / 165 / 177 of 177 | 158 / 171 / 171 of 177 |
+| Final refinement, on the 4 tasks that still failed | 40/40 | 40/40 |
+
+Rules that changed results (out of 10, without the rules and then with them):
+
+| Rule | Sonnet 5.5 | Opus 5.5 |
+|---|---|---|
+| Time zones | 5 → 10 | 0 → 9 |
+| Lookups | 1 → 10 | no change |
+| Object merging | 0 → 10 | no change |
+| XML attribute escaping | 5 → 10 | no change |
+| Rounding mode | 7 → 10 | 5 → 10 |
+| `splitBy` | 1 → 7, then 10 with the rebuilt file | no change |
+
+About 20 rules made no difference on either model. They moved unchanged:
+
+- most to `references/dataweave-correctness.md`;
+- the `deferred`, `log()`, `application/dw` and memory-property rules to the performance reference;
+- the JSON writer rule to the output-formats reference.
+
+The sentences an earlier step had removed for cases both models already handled (the `reduce` accumulator, strict date parsing and fixed decimals) are back in the correctness reference word for word. Only a few duplicated examples and links were dropped.
+
+**Cost.** The rules roughly triple the cost of a DataWeave task: Sonnet went from $0.038 to $0.107 per run, and Opus from $0.083 to $0.255.
+
+- **Main cause:** the assistant takes more steps with the rules (Sonnet 3.3 → 7.4, Opus 3.4 → 9.8). It reads the profile, POM and references and checks its work, and each step re-sends the conversation.
+- **The smaller file:** halving the always-loaded DataWeave rules, from 16,727 to 8,401 bytes (8,572 after two short sentences were restored), cut about 1,000 fresh input tokens per task. That is roughly 1% of the cost.
+
+#### New rules and their sources
+
+These cover the mistakes that remained most common, counted across all runs:
+
+- **Lambda chains (10 failed runs).**
+  - An unparenthesized lambda body runs to the end of the expression, so in `filter (i) -> i.price < 100 map ...` the `map` receives a Boolean (CLI).
+  - Comparisons bind more tightly than `and` and `or`, which bind more tightly than `matches`, `map` and `filter` ([precedence](https://docs.mulesoft.com/dataweave/2.9/dataweave-flow-control-precedence)).
+  - `!` negates only the next operand ([operators](https://docs.mulesoft.com/dataweave/2.9/dw-operators)).
+  - The `and`/`matches` form failed in 6 runs.
+- **Match guards (3 failed runs).** The type test goes inside the guard, as in MuleSoft's [pattern matching](https://docs.mulesoft.com/dataweave/2.9/dataweave-pattern-matching) example; `case s is String if (...)` does not parse (CLI). Compound conditions on conditional fields need one pair of parentheses (CLI, 2 failed runs).
+- **Imports (19 failed runs).**
+  - `dw::Core` is imported automatically and other modules need an import ([functions](https://docs.mulesoft.com/dataweave/2.9/dw-functions)).
+  - `isBlank` is in [Core](https://docs.mulesoft.com/dataweave/2.9/dw-core) and not in [`dw::core::Strings`](https://docs.mulesoft.com/dataweave/2.9/dw-strings), and importing it from Strings fails (CLI).
+  - `fail` is used from `dw::Runtime` ([fail](https://docs.mulesoft.com/dataweave/2.9/dw-runtime-functions-fail)).
+  - `take` is in `dw::core::Arrays` from 2.2.0 ([take](https://docs.mulesoft.com/dataweave/2.9/dw-arrays-functions-take)).
+  - `indexBy` does not exist (CLI).
+- **Variables (4 failed runs).** Header `var` declarations and local variables in `do` scopes ([variables](https://docs.mulesoft.com/dataweave/2.9/dataweave-variables)); a `var` after `---` does not compile (CLI).
+- **Joining text (4 failed runs).** `++` takes two Strings ([++](https://docs.mulesoft.com/dataweave/2.9/dw-core-functions-plusplus)). `"a" ++ null` fails, and an `isEmpty` check does not narrow `String | Null` for `++`, while `== null` does (CLI).
+
+#### Not established
+
+- **Client.** The tests ran in Claude Code. The team mostly uses these models in the Copilot desktop app, whose prompt and file loading differ.
+- **Settings and wording.** Effort was `medium`, and each task used one prompt wording.
+- **Rules kept by judgment.** About 10 rules concern process (version checks, testing, reporting) and were not tested.
+- **Other rule files.** The Mule XML, MUnit, Maven, API contract and configuration-property rules were not evaluated.
+- **The test kit.** The harness and raw results are not in this repository.

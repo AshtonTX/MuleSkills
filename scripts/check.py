@@ -51,13 +51,18 @@ MAX_OVERLAY_FILE_BYTES = 18_000
 RULES = ["api-contract", "configuration-properties", "dataweave", "maven", "mule-xml", "munit"]
 SKILL_FILES = [
     "team-mule-guardrails/SKILL.md",
+    "team-mule-guardrails/references/dataweave-correctness.md",
     "team-mule-guardrails/references/dataweave-operators.md",
     "team-mule-guardrails/references/dataweave-output-formats.md",
     "team-mule-guardrails/references/dataweave-performance.md",
     "team-mule-guardrails/references/mule-connectors.md",
     "team-mule-guardrails/references/mule-deployment-targets.md",
 ]
-PROJECT_FILES = [".github/mule/team-profile.md", ".github/mule/task-recipes.md"]
+PROJECT_FILES = [
+    ".github/mule/team-profile.md",
+    ".github/mule/team-profile-guide.md",
+    ".github/mule/task-recipes.md",
+]
 # Each layout: where scoped rules live, how their files are named, the
 # front-matter key that scopes them, where skills live, and the files it must have.
 LAYOUTS = {

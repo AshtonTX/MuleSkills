@@ -1,8 +1,8 @@
 # MuleSoft project context
 
-For MuleSoft work, read [the team profile](.github/mule/team-profile.md) and use the `team-mule-guardrails` skill when available. Otherwise open [the task recipes](.github/mule/task-recipes.md).
+Before you change or review MuleSoft files, read [the team profile](.github/mule/team-profile.md) and use the `team-mule-guardrails` skill when available; if your tool can't use skills, open [the task recipes](.github/mule/task-recipes.md) instead. For questions and explanations, read only the files the question is about.
 
-- Rules for each file type are in [the rule files](.claude/rules/). If the ones that match the file you are about to read or change are not already in your context, open them first. A Mule or MUnit XML file matches its own rules and the DataWeave rules.
+- Rules for each file type are in [the rule files](.claude/rules/). Read the file you will change or review first; many tools then add its matching rules automatically. Open a matching rule file only if it is still not in your context, and never open one twice. A Mule or MUnit XML file matches its own rules and the DataWeave rules.
 - Inspect the existing `pom.xml`, parent POM/property definitions, `mule-artifact.json`, and CI commands before choosing syntax, versions, dependencies, or tests. Unknown values stay unknown; do not replace project pins with "latest".
 - Reconcile conflicting instructions with project evidence and approved restrictions before dependent changes. Ask for the unresolved decision while continuing independent inspection. This guidance does not change the client's instruction precedence or grant tool permissions; linked files must actually be opened or supplied.
 - Follow the existing API contract and shared project conventions. Keep changes limited to the requested behavior. State assumptions that affect error, null, ordering, or retry semantics.
