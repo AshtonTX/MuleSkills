@@ -8,7 +8,7 @@ The official MuleSoft DX `build-mule-integration` skill declares version 2.0.0 a
 
 [Reviewed skill at 618a21d](https://github.com/mulesoft/mulesoft-dx/blob/618a21da314da785f6406e8bdfe485f062ede624/skills/mule-development/build-mule-integration/SKILL.md) · [5 October repository tree at c3b7378](https://github.com/mulesoft/mulesoft-dx/tree/c3b7378ceb237da7b81042948dcde50b43ab3725/skills/mule-development) · [Apache-2.0 license at the reviewed revision](https://github.com/mulesoft/mulesoft-dx/blob/618a21da314da785f6406e8bdfe485f062ede624/skills/mule-development/LICENSE.txt).
 
-Reuse its metadata-backed XML, namespace/dependency checks and evidence-first method. Do not activate its full workflow alongside conflicting instructions without an approved decision in [the team profile](../overlay/.github/mule/team-profile.md):
+Reuse its metadata-backed XML, namespace/dependency checks and evidence-first method. Do not activate its full workflow alongside conflicting instructions without an approved decision in [the team profile](../overlay/shared/.github/mule/team-profile.md):
 
 | Upstream rule or prerequisite | Required local decision before enabling |
 |---|---|
@@ -171,7 +171,7 @@ Copilot CLI 1.0.96 and the GitHub Copilot desktop app on macOS, using scratch pr
 
 ### What changed
 
-- Both large files were split. Every bullet was moved verbatim; none was reworded. Both files are now under 17 KB. The situational parts are in five files under `overlay/.github/skills/team-mule-guardrails/references/`: operator and function behavior, output formats, performance, connector and scope rules, and deployment target rules. Each rule file states when to read each reference.
+- Both large files were split. Every bullet was moved verbatim; none was reworded. Both files are now under 17 KB. The situational parts are in five files under the skill's `references/` folder: operator and function behavior, output formats, performance, connector and scope rules, and deployment target rules. Each rule file states when to read each reference.
 - The one edited bullet is the Mule XML pointer to the DataWeave guidance, which moved to the top of that file as its own paragraph.
 - Each instruction file has a `description`, which Copilot shows to the model beside the file's patterns.
 - `scripts/check.py` rejects any overlay Markdown file above 18,000 bytes, leaving a margin below the measured limit.
@@ -189,7 +189,36 @@ The fixture command now reports **72 passed, 0 failed** (twelve fixtures at six 
 
 ### Not established
 
-Windows, other models, and Copilot clients other than the CLI and desktop app were not tested. The split relies on the client being able to open a linked file. VS Code adds linked instruction files to a chat only when `chat.includeReferencedInstructions` is on, and it is off by default ([VS Code AI settings](https://code.visualstudio.com/docs/agents/reference/ai-settings), retrieved 13 October 2026); its agent mode can still open them with tools. In clients where files are attached by hand, the reference files have to be attached as well; the README says so, and each rule file tells the model to ask for a reference it cannot open. Claude Code does not read `.github/` instruction files at all; serving it needs a separate layout decision and is not part of this change.
+Windows, other models, and Copilot clients other than the CLI and desktop app were not tested. The split relies on the client being able to open a linked file. VS Code adds linked instruction files to a chat only when `chat.includeReferencedInstructions` is on, and it is off by default ([VS Code AI settings](https://code.visualstudio.com/docs/agents/reference/ai-settings), retrieved 13 October 2026); its agent mode can still open them with tools. In clients where files are attached by hand, the reference files have to be attached as well; the README says so, and each rule file tells the model to ask for a reference it cannot open. Claude Code does not read `.github/` instruction files at all; the next section records the layout that serves it.
+
+## One layout for Claude Code and Copilot: 13 October 2026
+
+One teammate uses Claude Code and the rest use GitHub Copilot CLI and the GitHub Copilot desktop app. Claude Code reads nothing under `.github/`, so the rules as installed until now never reached it. The default installation is now a single set of files in locations all three read. No Mule application was run.
+
+### Evidence
+
+Tested on macOS with Claude Code 2.1.296, Copilot CLI 1.0.96 and the Copilot desktop app, in scratch projects with one flow containing an inline Transform Message.
+
+| Claim | Evidence |
+|---|---|
+| Claude Code loads `CLAUDE.md`, `.claude/rules/*.md` scoped by `paths`, and `.claude/skills`, and nothing under `.github/` | [Claude Code memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) documentation, retrieved 13 October 2026. With only the `.github` files installed, no repository-wide or scoped rule was applied and the skill was not registered. With this layout installed by `scripts/install.sh`, both matching rule files were applied in 2 of 2 edit sessions, the skill was registered, and a request to change the output format read `dataweave-output-formats.md` in 2 of 2 logged sessions. |
+| Copilot CLI reads `.claude/rules/**/*.md` the way it reads `.github/instructions`, scoped by `paths` or `applyTo` | [CLI command reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#custom-instructions-locations); added in CLI 1.0.89 on 28 September 2026 ([changelog](https://github.com/github/copilot-cli/blob/main/changelog.md), [github/copilot-cli#4440](https://github.com/github/copilot-cli/issues/4440)). With this layout installed, `copilot instruction list` showed `CLAUDE.md` and the six rule files with their patterns and descriptions; both matching rule files were opened and read whole in 4 of 4 edit sessions, and `dataweave-output-formats.md` was opened in 2 of 2. |
+| The Copilot desktop app treats the two locations alike | Its session logs show the same system message for either: the repository-wide file in full, then a table of the scoped files. `CLAUDE.md` was applied in every desktop session, including with repository trust skipped, and the skill under `.claude/skills` was listed. |
+| A comma-separated `paths` value works in both | Claude Code's rule reference accepts "a YAML list or a comma-separated string"; Copilot listed each comma-separated value as separate patterns. |
+| Both layouts together load every rule twice | With a `.github/instructions` file and a `.claude/rules` file covering the same file type, the model opened both. The installer therefore refuses to add one layout beside the other. |
+| `.github/github-app.yml` is not needed | The desktop app's repository configuration can carry instructions, but must be accepted by each user and again after every outside change ([repository configuration](https://docs.github.com/en/copilot/reference/github-copilot-app-reference/repository-configuration)). The app already applied `CLAUDE.md`, so the file would only repeat it. |
+| Copilot code review and cloud agent do not list `.claude/rules` | [Custom instructions support](https://docs.github.com/en/copilot/reference/custom-instructions-support) lists `.github/instructions` and agent files such as `CLAUDE.md` for them. The `github` layout remains for projects that rely on those. |
+
+### What changed
+
+- `overlay/shared` is the source and the default installation: `CLAUDE.md`, `.claude/rules`, `.claude/skills` and `.github/mule`. The team profile stays at `.github/mule/team-profile.md`, so a project's recorded facts survive a move between layouts.
+- `overlay/github` is generated from it by `scripts/build.py`, which changes three things only: file locations, the scope key (`paths` to `applyTo`), and relative links. Run on the files as they stood, it reproduced the previous `.github` tree byte for byte. `scripts/build.py --check` runs in CI.
+- The repository-wide rules are worded for any assistant, and gained one line pointing to the rule files and noting that Mule and MUnit XML match two of them. That file is the one every client loads on every request.
+- `scripts/install.sh` takes `--layout shared|github`, defaults to `shared`, and stops before writing when the other layout's rule files are present.
+
+### Not established
+
+Windows was not tested, and no PowerShell installer is included because none could be tested here. The Claude desktop app's Chat and Cowork tabs were not tested; its Code tab runs Claude Code. A small model chosen by the Copilot desktop app's Auto mode skipped scoped rule files in earlier sessions, and this layout does not change that.
 
 ## Government Cloud and individual remote capabilities
 

@@ -1,2 +1,4 @@
 # Git Bash needs LF shebangs even when core.autocrlf is enabled.
 *.sh text eol=lf
+# Installed files are compared byte for byte and counted against a size limit.
+overlay/** text eol=lf
